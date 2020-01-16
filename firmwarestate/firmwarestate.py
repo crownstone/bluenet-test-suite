@@ -12,21 +12,21 @@ from BluenetLib.lib.util.Conversion import Conversion
 
 import pygame #for nice keyboard input
 
-def sendToCrownstone(commandtype, packetcontent):
-    controlPacket = ControlPacket(commandtype)
-    controlPacket.appendByteArray(packetcontent)
+# def sendToCrownstone(commandtype, packetcontent):
+#     controlPacket = ControlPacket(commandtype)
+#     controlPacket.appendByteArray(packetcontent)
 
-    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
+#     uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
     
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+#     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
 
-def propagateEventToCrownstone(eventtype, eventdata):
-    payload = []
-    payload += Conversion.uint16_to_uint8_array(eventtype)
-    payload += eventdata
+# def propagateEventToCrownstone(eventtype, eventdata):
+#     payload = []
+#     payload += Conversion.uint16_to_uint8_array(eventtype)
+#     payload += eventdata
     
-    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+#     uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
+#     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
 
 
 class FirmwareState:
@@ -48,6 +48,9 @@ class FirmwareState:
 
 
 class Main:
+    """
+    If this file is run as stand alone script, it will output the current state of the firmware.
+    """
     #construction
     def __init__(self):
         # Create new instance of Bluenet

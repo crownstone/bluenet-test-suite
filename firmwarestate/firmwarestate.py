@@ -2,33 +2,10 @@ import time, inspect, sys
 from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
 
 from BluenetLib.lib.core.uart.UartTypes import UartRxType
-from BluenetLib.lib.core.uart.UartTypes import UartTxType
-from BluenetLib.lib.core.uart.UartWrapper import UartWrapper
-from BluenetLib.lib.core.uart.uartPackets import UartPacket
-from BluenetLib.lib.protocol.BlePackets import ControlPacket
-from BluenetLib.lib.protocol.BluenetTypes import ControlType
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
-from BluenetLib.lib.util.Conversion import Conversion
 
 import pprint
 import pygame #for nice keyboard input
-
-# def sendToCrownstone(commandtype, packetcontent):
-#     controlPacket = ControlPacket(commandtype)
-#     controlPacket.appendByteArray(packetcontent)
-
-#     uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
-    
-#     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
-# def propagateEventToCrownstone(eventtype, eventdata):
-#     payload = []
-#     payload += Conversion.uint16_to_uint8_array(eventtype)
-#     payload += eventdata
-    
-#     uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
-#     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
 
 class FirmwareState:
     """
@@ -40,7 +17,16 @@ class FirmwareState:
         # thisptr -> valuename -> value
         self.statedict = dict()
 
+    def clear(self):
+        """
+        Clears the state dict.
+        """
+        self.statedict.clear()
+
     def parse(self, dataPacket):
+        """
+        Parses a message from crownstone.
+        """
         opCode = dataPacket.opCode
         if opCode == UartRxType.FIRMWARESTATE:
             stringResult = ""
@@ -86,6 +72,21 @@ class FirmwareState:
 
         self.statedict[ptr][valuename] = value
 
+def initializeUSB(bluenet_instance, portname, a_range):
+    """
+    Tries to connect to the given busname with the given index. If it finds one it will break,
+    logs where there is none. And returns full connected port name as string on success/None object on failure.
+    """
+    for i in a_range:
+        try:
+            port = "/dev/{0}{1}".format(portname,i)
+            bluenet_instance.initializeUSB(port)
+            return port
+        except Exception as err:
+            print("coudn't find '/dev/ttyACM{0}', trying next port".format(i))
+            print(err)
+    return None
+
 class Main:
     """
     If this file is run as stand alone script, it will output the current state of the firmware.
@@ -93,18 +94,15 @@ class Main:
     def __init__(self):
         # Create new instance of Bluenet
         self.bluenet = Bluenet()
+
+        # create FirmwareState instance - this must be constructed after Bluenet().
         self.fwState = FirmwareState()
 
         # see if we can find a crownstone on one of the ACM busses
         # note: this is where we could add several FirmwareState objects
         # (1 per uart bus) whenever we wish to write tests involving several crownstones,
         # each of them on their own j-link.
-        for i in range(4):
-            try:
-                self.bluenet.initializeUSB("/dev/ttyACM{0}".format(i))
-                break
-            except:
-                print("coudn't find /dev/ttyACM{0}, trying next port".format(i))
+        initializeUSB(self.bluenet, "ttyACM", range(4))
 
         pygame.init()
         self.window = pygame.display.set_mode((400,400))

@@ -29,4 +29,5 @@ def sendCommandToCrownstone(commandtype, packetcontent):
     controlPacket = ControlPacket(commandtype)
     controlPacket.appendByteArray(packetcontent)
     uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
+    print("sendCommandToCrownstone( type:{0} )".format(commandtype)); print(uartPacket)
     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)

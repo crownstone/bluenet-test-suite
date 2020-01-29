@@ -17,13 +17,14 @@ from testframework.framework import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
-# class MyTest(TestFramework):
-#     def __init__(self):
-        # super(MyTest,self).__init__(bootloadsflashintooverride_test)
 
-def bootloadsflashintooverride_test(FW):
-    print("setup device for this test")
-    sendCommandToCrownstone(ControlType.SWITCH, [100])
+def test_bootloadsflashintooverride_loopbody(FW, intensity):
+    print("#####")
+    print("setup test_bootloadsflashintooverride_loopbody (intensity: {0})".format(intensity))
+    print("-----")
+    sendCommandToCrownstone(ControlType.SWITCH, [intensity])
+
+    time.sleep(15)
 
     print("reset firmwarestate recorder")
     FW.clear()
@@ -32,19 +33,34 @@ def bootloadsflashintooverride_test(FW):
     sendCommandToCrownstone(ControlType.RESET, [])
 
     print("allow device to reset and startup")
-    time.sleep(0.5)
+    time.sleep(10)
 
+    print("-----")
     print("check post conditions.")
-    for obj in FW.statedict.values():
-        if obj.get('typename') == 'SwSwitch':
-            if obj.get('currentState.state.dimmer') == '0' and obj.get('currentState.state.relay') == '1':
-                return "Result: success"
+    FW.print()
+    print("-----")
 
-    return "Result: failure"
+    expected_override_state = min(max(0, intensity), 100)
+    expected_relay_state = bool( (intensity >> 7) & 1 )
+
+    if FW.assertFindFailures("SwitchAggregator", 'overrideState', expected_override_state):
+        return TestFramework.failure("overrideState should've been {0} after reset".format(expected_override_state))
+    elif FW.assertFindFailures("HwSwitch", 'relay', expected_relay_state):
+        return TestFramework.failure("relaystate should've been {0} after reset".format(expected_relay_state))
+    else:
+        return TestFramework.success()
+
+
+def test_bootloadsflashintooverride(FW):
+    result = []
+    for intensity in [0, 128]:
+        result += [test_bootloadsflashintooverride_loopbody(FW, intensity)]
+    return result
+
 
 if __name__ == "__main__":
-   with TestFramework(bootloadsflashintooverride_test) as frame:
-       if frame != None:
-           frame.testme()
-       else:
-           print("Result: failure")
+    with TestFramework(test_bootloadsflashintooverride) as frame:
+        if frame != None:
+            print(frame.test_run())
+        else:
+            print(TestFramework.failure())

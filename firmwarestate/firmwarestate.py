@@ -72,6 +72,35 @@ class FirmwareState:
 
         self.statedict[ptr][valuename] = value
 
+    def print(self):
+        prettyprinter = pprint.PrettyPrinter(indent=4)
+        prettyprint = prettyprinter.pprint
+        prettyprint(self.statedict)
+
+    def assertFindFailures(self, classname, expressionname, value):
+        """
+        Checks if for all objects of type [classname] the entry for [expressionname] has given [value].
+
+        Returns a list of pointers (keys in the statedict) to objects that fail this test, including:
+            - those entries which do not contain given variablename
+            - those entries which dissatisfy equality.
+        Returns None if no objects of given classanem where found.
+
+        Note: value will be stringified.
+        """
+        failures = []
+        existsAny = False
+        for ptr, obj in self.statedict.items():
+            if obj.get('typename') == classname:
+                existsAny = True
+                if obj.get(expressionname) != str(value):
+                    failures += [ptr]
+        if existsAny:
+            return failures
+        return None
+
+
+
 def initializeUSB(bluenet_instance, portname, a_range):
     """
     Tries to connect to the given busname with the given index. If it finds one it will break,
@@ -121,9 +150,6 @@ class Main:
 
     def run(self):
         print("firmwarestate up and running")
-
-        prettyprinter = pprint.PrettyPrinter(indent=4)
-        prettyprint = prettyprinter.pprint
         run = True
         while run:
             pygame.time.delay(100)
@@ -133,7 +159,7 @@ class Main:
                     run = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
-                        prettyprint(self.fwState.statedict)
+                        self.fwState.print()
 
 if __name__ == "__main__":
     with Main() as m:

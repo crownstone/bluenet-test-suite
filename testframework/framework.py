@@ -4,14 +4,17 @@ from firmwarecontrol import *
 from firmwarestate.firmwarestate import *
 from BluenetLib import Bluenet
 
-# class TestFramework(unittest.TestCase):
+
+# TODO: Convert to unittest library so that tests can be automatically discovered / executed
+# E.g.  class TestFramework(unittest.TestCase):
+
 class TestFramework:
     # construction
     def __init__(self, testfunction):
         """
-        testfunction implements the actual test and should return a human readable string that represents the result.
+        parameter [testfunction] implements the actual test and should return a
+        human readable string that represents the result.
         """
-        # super(TestFramework,self).__init__()
         self.test_impl = testfunction
 
         # Create new instance of Bluenet
@@ -20,7 +23,7 @@ class TestFramework:
 
     # __enter__ is part of the 'with' interface. It is used to setup the testframework
     def __enter__(self):
-    # def setUp(self):
+        # def setUp(self):
         connectedport = initializeUSB(self.bluenet, "ttyACM", range(4))
 
         if connectedport == None:
@@ -34,8 +37,21 @@ class TestFramework:
 
     # __exit__ is part of the 'with' interface. It will be used to tear down the test environment.
     def __exit__(self, type, value, traceback):
-    # def tearDown(self):
+        # def tearDown(self):
         self.bluenet.stop()
 
-    def testme(self):
-        print (self.test_impl(self.firmwarestate))
+    @classmethod
+    def success(cls):
+        return "Result: Success"
+
+    @classmethod
+    def failure(cls, cause=""):
+        if cause:
+            return "Result: Failure: " + cause
+        return "Result: Failure"
+
+    def test_run(self):
+        """
+        Runs the testfunction which this instance was constructed with and prints its result.
+        """
+        print(self.test_impl(self.firmwarestate))

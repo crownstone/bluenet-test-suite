@@ -54,7 +54,10 @@ def test_norelayflickeringonboot_loopbody(FW, minimal_relay_half_period_ms):
     return failures if failures else TestFramework.success()
 
 
-def test_bootloadsflashintooverride(FW):
+def test_norelayflickeringonboot(FW):
+    """
+    It's not allowed to see/hear any sudden relay state changes after a reboot.
+    """
     print("##### test_bootloadsflashintooverride #####")
     print("override switch state to be sure it is set to fully on, and pause 15 sec to enforce persistence")
     sendCommandToCrownstone(ControlType.SWITCH, [100])
@@ -69,7 +72,7 @@ def test_bootloadsflashintooverride(FW):
 
 
 if __name__ == "__main__":
-    with TestFramework(test_bootloadsflashintooverride) as frame:
+    with TestFramework(test_norelayflickeringonboot) as frame:
         if frame != None:
             print(frame.test_run())
         else:

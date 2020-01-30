@@ -4,8 +4,10 @@ from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
 from BluenetLib.lib.core.uart.UartTypes import UartRxType
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
 
+import datetime
 import pprint
-import pygame #for nice keyboard input
+
+import pygame #for nice keyboard input when used as stand alone script
 
 class FirmwareState:
     """
@@ -16,12 +18,28 @@ class FirmwareState:
         # statedict: dict (int -> dict (string -> value) ),
         # thisptr -> valuename -> value
         self.statedict = dict()
+        self.historylist = []
 
     def clear(self):
         """
         Clears the state dict.
         """
         self.statedict.clear()
+        self.historylist.clear()
+
+    def classnamefromprettyfunction(self, prettyfunctionname):
+        classname = ""
+        try:
+            # try to infer class name from gnu __PRETTY_FUNCTION__ (impl dependent).
+            # it should be the last cpp token of the top-most level scoped part in the string
+            # (note: assumes our code is in global namespace.)
+            # (note: it's not possible to distinguish this from top-level function names.)
+            classname = prettyfunctionname.split("::")[0].split(" ")[-1]
+        except Exception as inst:
+            # the exception instance
+            print("couldn't identify classname: " + type(inst) + " " + prettyfunctionname)
+            pass
+        return classname
 
     def parse(self, dataPacket):
         """
@@ -35,7 +53,10 @@ class FirmwareState:
                     stringResult += chr(byte)
             statelist = stringResult.split(",")
 
-            self.pushvalue("0x"+statelist[0], statelist[1], statelist[2], statelist[3])
+            statelist[1] = self.classnamefromprettyfunction(statelist[1])
+
+            self.pushstatevalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
+            self.pushhistoryvalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
 
     def construct(self, ptr, typename):
         """
@@ -52,30 +73,31 @@ class FirmwareState:
         """
         self.statedict.pop(ptr, None)
 
-    def pushvalue(self, ptr, scopename, valuename, value):
+    def pushstatevalue(self, ptr, classname, valuename, value):
         """
         Add or update value in the state dict. If ptr wasn't contained in it yet, adds an entry
         """
         if ptr not in self.statedict:
-            classname = ""
-            try:
-                # try to infer class name from gnu __PRETTY_FUNCTION__ (impl dependent).
-                # it should be the last cpp token of the top-most level scoped part in the string
-                # (note: assumes our code is in global namespace.)
-                # (note: it's not possible to distinguish this from top-level function names.)
-                classname = scopename.split("::")[0].split(" ")[-1]
-            except Exception as inst:
-                # the exception instance
-                print("couldn't identify classname: " + type(inst) + " " + scopename)
-                pass
             self.construct(ptr, classname)
 
         self.statedict[ptr][valuename] = value
+
+    def pushhistoryvalue(self, ptr, classname, valuename, value):
+        """
+        Adds a record to the historylist.
+        """
+        self.historylist += [[datetime.datetime.now(), ptr, classname, valuename, value]]
+
+    def printhistory(self):
+        prettyprinter = pprint.PrettyPrinter(indent=4)
+        prettyprint = prettyprinter.pprint
+        prettyprint(self.historylist)
 
     def print(self):
         prettyprinter = pprint.PrettyPrinter(indent=4)
         prettyprint = prettyprinter.pprint
         prettyprint(self.statedict)
+        prettyprint(self.historylist)
 
     def assertFindFailures(self, classname, expressionname, value):
         """
@@ -98,7 +120,6 @@ class FirmwareState:
         if existsAny:
             return failures
         return None
-
 
 
 def initializeUSB(bluenet_instance, portname, a_range):

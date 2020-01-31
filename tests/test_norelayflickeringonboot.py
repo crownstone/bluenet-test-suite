@@ -28,13 +28,15 @@ def test_norelayflickeringonboot_loopbody(FW, minimal_relay_half_period_ms):
     # filter relevant history
     relay_history_time_value_pairs = [
         [logentry[0], logentry[4]]
-        for logentry in FW.historylist if logentry[2] == "HwSwitch" and logentry[3] == "relay"
+        for logentry in FW.historylist if logentry[2] == "Relay" and logentry[3] == "on"
     ]
 
     min_time_diff_between_relay_switches = datetime.timedelta(microseconds=minimal_relay_half_period_ms * 1000)
 
-    if len(relay_history_time_value_pairs) < 2:
-        print("too few relay state changes reported during flick test")
+    num_relay_state_changes = len(relay_history_time_value_pairs)
+    if num_relay_state_changes < 2:
+        # print("too few relay state changes reported during flick test to check period lengths ({0})".format(
+        # num_relay_state_changes))
         return TestFramework.success()
 
     failures = []

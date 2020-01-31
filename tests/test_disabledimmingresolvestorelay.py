@@ -25,44 +25,50 @@ def test_disabledimmingresolvestorelay_loopbody(FW, intensity):
     after disallowing dimming, if intensity > 0: the relay should be on; else off.
 
     """
-    # print("reset firmwarestate recorder")
+    print("##### test_disabledimmingresolvestorelay_loopbody #####")
+
+    print("reset firmwarestate recorder")
     FW.clear()
 
-    # print("restart test subject")
+    print("restart test subject and wait for dimmer to have started")
     sendCommandToCrownstone(ControlType.RESET, [])
-    time.sleep(5)
+    time.sleep(70)
 
-    # set dimming allowed true and put a value in there.
+    print("set dimming allowed true and put a value in there.")
     sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1])
+    time.sleep(0.5)
     sendCommandToCrownstone(ControlType.SWITCH, [intensity])
     time.sleep(0.5)
 
-    print("##### test_disabledimmingresolvestorelay_loopbody setup #####")
 
-    # check override state
-    if FW.assertFindFailures("SwitchAggregator", 'overrideState', intensity):
+    print("check override state")
+    if failures := FW.assertFindFailures("SwitchAggregator", 'overrideState', intensity):
+        print(failures)
         return TestFramework.failure("Override not set after switch command")
 
-    # check dimmer value intensity
+    FW.print()
+    FW.printhistory()
+
+    print("check dimmer value intensity")
     if FW.assertFindFailures("HwSwitch", 'dimmer', intensity):
         return TestFramework.failure("Dimmer not set to correct intensity")
 
-    # check relay value 0
+    print("check relay value 0")
     if FW.assertFindFailures("HwSwitch", 'relay', 0):
         return TestFramework.failure("Relay should be off when dimming is allowed")
 
-    # set dimming allowed false
+    print("set dimming allowed false")
     sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [0])
 
-    # check override hasn't changed
+    print("check override hasn't changed")
     if FW.assertFindFailures("SwitchAggregator", 'overrideState', intensity):
         return TestFramework.failure("Override changed after dimming disallowed")
 
-    # check dimmer is deactivated
+    print("check dimmer is deactivated")
     if FW.assertFindFailures("HwSwitch", 'dimmer', 0):
         return TestFramework.failure("Dimmer wasn't disabled after dimming disallowed")
 
-    # check relay value is activated
+    print("check relay value is activated")
     if FW.assertFindFailures("HwSwitch", 'relay', 1 if intensity > 0 else 0):
         return TestFramework.failure("Relay did not pick up correct value after dimming disallowed")
 

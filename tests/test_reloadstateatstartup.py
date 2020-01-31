@@ -49,7 +49,7 @@ def test_bootloadsflashintooverride_loopbody(FW, intensity):
 
     # Test HwSwitch.relay state
     expected_relay_state = bool((intensity >> 7) & 1)
-    if FW.assertFindFailures("HwSwitch", 'relay', expected_relay_state):
+    if FW.assertFindFailures("Relay", 'on', expected_relay_state):
         failureid = uuid.uuid4()
         print("----- Failure: {0} -----".format(failureid))
         return TestFramework.failure("{0} relaystate should've been {1} after reset".format(

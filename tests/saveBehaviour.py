@@ -14,6 +14,26 @@ import pygame #for nice keyboard input
 def printFunctionName():
     print(inspect.currentframe().f_back.f_code.co_name)
 
+def sendToCrownstone(commandtype, packetcontent):
+    controlPacket = ControlPacket(commandtype)
+    controlPacket.appendByteArray(packetcontent)
+
+    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
+
+    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+
+def propagateEventToCrownstone(eventtype, eventdata):
+    payload = []
+    payload += Conversion.uint16_to_uint8_array(eventtype)
+    payload += eventdata
+
+    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT, payload).getPacket()
+    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+
+def WhatToDoWithUartData(data):
+    pass  # already handled somehwere else apparently
+
+# ================================= Packet definitions =================================
 class TimeOfDay:
     def __init__(self, offset = 0):
         self.baseTime = 0 # ofset from midnight
@@ -161,25 +181,7 @@ class BehaviourEntry:
         result += self.behaviour.serialize()
         return result
 
-def WhatToDoWithUartData(data):
-    pass # already handled somehwere else apparently
-
-def sendToCrownstone(commandtype, packetcontent):
-    controlPacket = ControlPacket(commandtype)
-    controlPacket.appendByteArray(packetcontent)
-
-    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
-    
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
-def propagateEventToCrownstone(eventtype, eventdata):
-    payload = []
-    payload += Conversion.uint16_to_uint8_array(eventtype)
-    payload += eventdata
-    
-    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
+# ================================= Behaviour related functions =================================
 def saveBehaviour(behave):
     printFunctionName()
     sendToCrownstone(ControlType.SAVE_BEHAVIOUR, behave.serialize())
@@ -229,7 +231,7 @@ def setExtendedBehaviour(timeout):
             )
     )
 
-
+# ================================= Lower level functions =================================
 def switch(value):
     printFunctionName()
     if value > 90:
@@ -289,6 +291,7 @@ def sendPresence(room, profileId):
         Conversion.uint8_to_uint8_array(0)   # ! uint8_t  flags;
     )
 
+# ================================= Test scenarios =================================
 def testScenario_0():
     """
     No presence rules, 
@@ -374,7 +377,7 @@ def SetupBehaviourTestScenario(index):
             deleteBehaviour(i)
         pygame.time.delay(200)
 
-
+# ================================= Main loop =================================
 class Main:
     #construction
     def __init__(self):

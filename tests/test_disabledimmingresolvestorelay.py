@@ -72,12 +72,12 @@ def test_disabledimmingresolvestorelay_loopbody(FW, intensity):
     time.sleep(0.5)
 
     # print("check override hasn't changed")
-    failures = FW.assertFindFailures("SwitchAggregator", 'overrideState', intensity)
+    failures = FW.assertFindFailures("SwitchAggregator", 'overrideState', 0 if intensity == 0 else 100 )
     if failures:
         FW.print()
         FW.printhistory()
         print(failures)
-        return TestFramework.failure("Override changed after dimming disallowed")
+        return TestFramework.failure("Override is not correctly adjusted after disallowing dimming")
 
     # print("check dimmer is deactivated")
     failures = FW.assertFindFailures("Dimmer", 'intensity', 0)

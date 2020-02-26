@@ -14,6 +14,30 @@ import pygame #for nice keyboard input
 def printFunctionName():
     print(inspect.currentframe().f_back.f_code.co_name)
 
+def sendToCrownstone(commandtype, packetcontent):
+    """
+    [commandtype] must be an element of the ControlType enum.
+    """
+    controlPacket = ControlPacket(commandtype)
+    controlPacket.appendByteArray(packetcontent)
+
+    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
+
+    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+
+def propagateEventToCrownstone(eventtype, eventdata):
+    payload = []
+    payload += Conversion.uint16_to_uint8_array(eventtype)
+    payload += eventdata
+
+    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT, payload).getPacket()
+    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+
+def WhatToDoWithUartData(data):
+    #print(".")
+    pass  # already handled somehwere else apparently
+
+# ================================= Packet definitions =================================
 class TimeOfDay:
     def __init__(self, offset = 0):
         self.baseTime = 0 # ofset from midnight
@@ -161,25 +185,7 @@ class BehaviourEntry:
         result += self.behaviour.serialize()
         return result
 
-def WhatToDoWithUartData(data):
-    pass # already handled somehwere else apparently
-
-def sendToCrownstone(commandtype, packetcontent):
-    controlPacket = ControlPacket(commandtype)
-    controlPacket.appendByteArray(packetcontent)
-
-    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
-    
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
-def propagateEventToCrownstone(eventtype, eventdata):
-    payload = []
-    payload += Conversion.uint16_to_uint8_array(eventtype)
-    payload += eventdata
-    
-    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
+# ================================= Behaviour related functions =================================
 def saveBehaviour(behave):
     printFunctionName()
     sendToCrownstone(ControlType.SAVE_BEHAVIOUR, behave.serialize())
@@ -229,7 +235,7 @@ def setExtendedBehaviour(timeout):
             )
     )
 
-
+# ================================= Lower level functions =================================
 def switch(value):
     printFunctionName()
     if value > 90:
@@ -289,6 +295,14 @@ def sendPresence(room, profileId):
         Conversion.uint8_to_uint8_array(0)   # ! uint8_t  flags;
     )
 
+def gotoDfu():
+    """
+    Sends uart command to put device in dfu mode.
+    """
+    printFunctionName()
+    sendToCrownstone(ControlType.GOTO_DFU, [])
+
+# ================================= Test scenarios =================================
 def testScenario_0():
     """
     No presence rules, 
@@ -374,7 +388,7 @@ def SetupBehaviourTestScenario(index):
             deleteBehaviour(i)
         pygame.time.delay(200)
 
-
+# ================================= Main loop =================================
 class Main:
     #construction
     def __init__(self):
@@ -385,12 +399,37 @@ class Main:
 
         self.bluenet = Bluenet()
 
-        for i in range(4):
+        self.initialized = False
+
+        while not self.initialized:
+            inpt = input("input ACM port number: ")
+
+            n = None
             try:
-                self.bluenet.initializeUSB("/dev/ttyACM{0}".format(i))
+                n = int(inpt)
+            except:
+                print("couldn't cast input to integer, aborting")
+                break
+
+            try:
+                self.bluenet.initializeUSB("/dev/ttyACM{0}".format(n))
+                self.initialized = True
                 break
             except:
-                print("coudn't find /dev/ttyACM{0}, trying next port".format(i))
+                print("coudn't find /dev/ttyACM{0}, try next port".format(n))
+
+
+        # for i in range(4):
+        #     try:
+        #         self.bluenet.initializeUSB("/dev/ttyACM{0}".format(i))
+        #         self.initialized = True
+        #         break
+        #     except:
+        #         print("coudn't find /dev/ttyACM{0}, trying next port".format(i))
+
+        if not self.initialized:
+            print("Failed to connect.")
+            return
 
         pygame.init()
         self.window = pygame.display.set_mode((400,400))
@@ -413,6 +452,10 @@ class Main:
 
     #actual work for this example
     def run(self):
+        if not self.initialized:
+            print("Not going to run if not initialized.")
+            return
+
         print("saveBehaviour Example up and running")
 
         run = True
@@ -430,8 +473,8 @@ class Main:
                     run = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
-                        # ----- save -----
-                        saveBehaviour(SwitchBehaviour.example())
+                        # ----- send generic test event over internal evt bus -----
+                        propagateEventToCrownstone(0xffff,[])
                     elif event.key == ord('i'):
                         # ----- get indicices -----
                         getBehaviourIndices()
@@ -473,22 +516,25 @@ class Main:
                     elif event.key == pygame.K_t and pygame.key.get_mods() & pygame.KMOD_SHIFT:
                         # set time to current
                         setTimeSecSinceMidnight(currentTimeSecSinceMidnight())
-                    elif event.key == ord('b'):
+                    elif event.key == pygame.K_b:
                         # ----- behaviour handler active -----
                         behaviourHandler_isActive = not behaviourHandler_isActive
                         setBehaviourHandlerActive(behaviourHandler_isActive)
-                    elif event.key == ord('c'):
+                    elif event.key == pygame.K_c:
                         # ----- clear the presence buffer on the crownstone
                         sendPresence(0xff,0xff)
-                    elif event.key == ord('d'): 
-                        # ----- dim -----
-                        setAllowDimming(dim_toggle)
-                        dim_toggle ^= True
-                    elif event.key == ord('l'):
+                    elif event.key == pygame.K_d:
+                        if pygame.key.get_mods() & pygame.KMOD_SHIFT:
+                            gotoDfu()
+                        else:
+                            # ----- dim -----
+                            setAllowDimming(dim_toggle)
+                            dim_toggle ^= True
+                    elif event.key == pygame.K_l:
                         # ----- lock -----
                         setLocked(lock_toggle)
                         lock_toggle ^= True
-                    elif event.key == ord('q'):
+                    elif event.key == pygame.K_q:
                         run = False
 
 if __name__ == "__main__":

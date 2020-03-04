@@ -42,20 +42,46 @@ class test_case:
         self.id = __class__.TestCaseCounter
         __class__.TestCaseCounter += 1
 
-    def timelist(self):
-        return sorted([self.t0.fromTime.offset, self.t1.fromTime.offset,
-                       self.t0.untilTime.offset, self.t1.untilTime.offset])
-
     def ex_time(self, index):
-        tl = self.timelist()
-        return int((tl[index] + tl[index + 1]) / 2.0)
+        f0 = self.t0.fromTime.offset
+        f1 = self.t1.fromTime.offset
+        u0 = self.t0.untilTime.offset
+        u1 = self.t1.untilTime.offset
+
+        # lift the intervals from Z/(24*3600)Z to the natural number line
+        if u0 < f0:
+            u0 += 24*3600
+
+        if u1 < f1:
+            u1 += 24*3600
+
+        # check if the intervals intersect on the natural numberline, if not, add a day to the lowest interval.
+        if not max(f0,f1) <= min(u0,u1):
+            # intersection is empty, move up lower one.
+            if f0 <= f1:
+                # can check on only one bound because knowledge of intersection
+                f0 += 24*3600
+                u0 += 24*3600
+            else:
+                f1 += 24*3600
+                u1 += 24*3600
+
+        times_list = sorted([f0, f1, u0, u1])
+        # if it's not solved now, I've tried...
+
+        # returns average of two consecutive bounds of the two intervals,
+        # wrapping back to Z/(24*3600)Z
+        return int((times_list[index] + times_list[index + 1]) / 2.0) % (24*3600)
+
+    def __str__(self):
+        return "case {9}: t0=[{0}:00,{1}:00] @{2} t1=[{3}:00,{4}:00], @{5} expect [{6},{7},{8}]".format(
+            self.t0.fromTime.offset // 3600, self.t0.untilTime.offset // 3600, self.t0.intensity,
+            self.t1.fromTime.offset // 3600, self.t1.untilTime.offset // 3600, self.t1.intensity,
+            self.e[0], self.e[1], self.e[2], self.id
+        )
 
     def print(self):
-        print("case {7}: t0=[{0},{1}] t1=[{2},{3}], expect [{4},{5},{6}]".format(
-            self.t0.fromTime.offset // 3600, self.t0.untilTime.offset // 3600,
-            self.t1.fromTime.offset // 3600, self.t1.untilTime.offset // 3600,
-            self.e[0], self.e[1], self.e[2], self.id
-        ))
+        print(str(self))
 
 
 def test_twilightconflictresolution_loopbody(FW, testcase):
@@ -71,6 +97,7 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
     sendTwilight(0, testcase.t0)
     time.sleep(0.2)
     sendTwilight(1, testcase.t1)
+    time.sleep(0.2)
 
     # print("reset firmwarestate recorder")
 
@@ -84,12 +111,18 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
         # it shouldn't make a difference if the sleep(1) will cross interval boundary.
         # we need the second however because I'm not sure if switchAggregator will
         # immediately recompute state upon a setTime event.
-        time.sleep(1)
+        time.sleep(1.5)
 
         failures = FW.assertFindFailures("TwilightHandler", 'previousIntendedState', testcase.e[i])
         if failures:
-            failmsg = TestFramework.failure("failed case {0},{1} at time: {2}. Expected {3}".format(
-                testcase.id, i, testtime, testcase.e[i]))
+            actualvalue = None
+            try:
+                actualvalue = FW.statedict[failures[0]].get("previousIntendedState")
+            except:
+                actualvalue = "<not found>"
+
+            failmsg = TestFramework.failure("failed: ({0},{1}). At time: {2}:{3} expected {4} but got {5}".format(
+                i, str(testcase), testtime//3600, (testtime % 3600)//60, testcase.e[i], actualvalue))
             testcase.print()
             FW.print()
             return failmsg
@@ -104,7 +137,7 @@ def test_twilightconflictresolution(FW):
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 50),
                            buildTwilight(1 + hr_offset, 3 + hr_offset, 75), [50, 75, 75]),  # partially overlapping
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 75),
-                           buildTwilight(1 + hr_offset, 3 + hr_offset, 50), [50, 50, 75]),  # partially overlapping
+                           buildTwilight(1 + hr_offset, 3 + hr_offset, 50), [75, 50, 50]),  # partially overlapping
         cases += test_case(buildTwilight(0 + hr_offset, 3 + hr_offset, 50),
                            buildTwilight(1 + hr_offset, 2 + hr_offset, 75), [50, 75, 50]),  # full overlap, increasing
         cases += test_case(buildTwilight(0 + hr_offset, 3 + hr_offset, 75),
@@ -114,7 +147,7 @@ def test_twilightconflictresolution(FW):
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 75),
                            buildTwilight(0 + hr_offset, 1 + hr_offset, 50), [50, 50, 75]),  # same starttime, decreasing
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 75),
-                           buildTwilight(0 + hr_offset, 2 + hr_offset, 50), [50, 50, 0]),  # same starttime and endtime
+                           buildTwilight(0 + hr_offset, 2 + hr_offset, 50), [50, 50, 100]),  # same starttime and endtime
                                                                                            # last case ex_time[2] will
                                                                                            # falls at 02:00+offset.
 
@@ -141,9 +174,11 @@ def test_twilightconflictresolution(FW):
 if __name__ == "__main__":
     with TestFramework(test_twilightconflictresolution) as frame:
         if frame != None:
-            result = frame.test_run()
+            results = frame.test_run()
             prettyprinter = pprint.PrettyPrinter(indent=4)
-            prettyprinter.pprint(result)
+            print ("Test finished with result:")
+            for result in results:
+                print(result)
 
         else:
             print(TestFramework.failure("Couldn't setup test framework"))

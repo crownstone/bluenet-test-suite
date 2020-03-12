@@ -1,6 +1,64 @@
 from math import *
 import random
 
+# for visualisation purposes
+import pygame
+pygame.init()
+
+# Define some colors
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+
+# some output modifiers
+VISUALIZE = 10  # set to 0 for no visualisation, set to positive integer value for inter-frame delay
+PRINT = False
+
+if VISUALIZE:
+    # Set the height and width of the screen
+    screen_size = (1000, 1000)
+    mid_screen = [screen_size[i] / 2.0 for i in range(2)]
+    screen = pygame.display.set_mode(screen_size)
+    pygame.display.set_caption("Gradient Descent Visualisation")
+
+
+def pointToScreen(point2d, boundaries):
+    """
+    Returns a 2d coordinate in screenspace, representing the 2dpoint
+    such that (0,0) ends up in the middle, (boundaries[0],0) ends up
+    in the middle of the upper edge of the screen etc.
+    """
+    return [int(mid_screen[i] + point2d[i] * mid_screen[i]/boundaries[i]) for i in range(2)]
+
+def triangleCenter(triangle):
+    return [sum([triangle[i][j] for i in range(3)]) / 3.0 for j in range(2)]
+
+def pointdiff2d(v0, v1):
+    return [v0[i]-v1[i] for i in range(len(v0))]
+
+def updateFrame(targetTriangle, estimateTriangle, bounds):
+    """
+    Keeps the estimate triangle on the same place as
+    """
+    target_center = triangleCenter(targetTriangle)
+    estimate_center = triangleCenter(estimateTriangle)
+    offset = pointdiff2d(estimate_center,target_center)
+
+    if PRINT:
+        print("target_center", target_center)
+        print("estimate_center ", estimate_center)
+        print("offset ", offset)
+        print ("est - offset", pointdiff2d(estimate_center, offset))
+
+    screen.fill(WHITE)
+    pygame.draw.polygon(screen, BLACK, [pointToScreen(targetTriangle[i], bounds) for i in range(3)], 5)
+    pygame.draw.circle(screen, BLACK, pointToScreen(target_center, bounds), 3)
+
+    pygame.draw.polygon(screen, RED, [pointToScreen(pointdiff2d(estimateTriangle[i], offset), bounds) for i in range(3)], 5)
+    pygame.draw.circle(screen, RED, pointToScreen(pointdiff2d(estimate_center, offset), bounds), 3)
+    pygame.display.flip()
 
 # ======================================================================================================================
 # Distance functions
@@ -24,7 +82,7 @@ def d(p0, p1):
 # ======================================================================================================================
 # Gradient descent algorithm
 # ======================================================================================================================
-def GradDescent(X0, stepSize, maxIters, precision, Func, GradFunc):
+def GradDescent(X0, stepSize, maxIters, precision, Func, GradFunc, targetTriangle = None):
     """
     returns an estimate Xn such that Func(X_n) is minimal, or
     maxIters has been reached, or "Func(X_n)-Func(X_{n-1})" is
@@ -37,31 +95,63 @@ def GradDescent(X0, stepSize, maxIters, precision, Func, GradFunc):
 
     Returns a pair (X,report) where report is a string with information about
     the result of function call, and X is the estimate
+
+    targetTriangle: this is the actual value we are trying to optimize for.
+      must be valid bunch of points when visualizing.
     """
     n = len(X0)
     if n == 0:
         return X0, "empty list won't descent that well"
     k = len(X0[0])
 
+    if VISUALIZE:
+        # set the bounds to twice the size of the target triangle
+        bounds = [2*max([targetTriangle[i][j] for i in range(n)]) for j in range(k)]
+        # wait a bit so you have time to open the window if it doesn't pop up in the right place
+        # pygame.time.wait(2000)
+
     prevXValue = Func(X0)
     currPrecision = 0  # (won't be checked before it's set to an actual value)
+    result = None
     for i in range(maxIters):
         gradX = GradFunc(X0)
         X0 = [[X0[s][t] - stepSize * gradX[s][t] for t in range(k)] for s in range(n)]
+
+        # optimization with regards to numeric stability:
+        # maybe subtract the average of all points in X0 from all points in X0.
+        # as the function is translation invariant it may need an artificial measure like that
 
         nextXValue = Func(X0)
         currPrecision = abs(prevXValue - nextXValue)
         prevXValue = nextXValue
 
-        print("------------------------------")
-        # print("gradX: {0}".format(gradX))
-        print("prevXValue: {0}, nextXValue: {1}, currPrecision: {2}".format(prevXValue, nextXValue, currPrecision))
-        print("Next estimate for the points X0:")
-        for x in X0:
-            print(x)
+        if VISUALIZE:
+            updateFrame(targetTriangle, X0, bounds)
+
+            while True:
+                # only run while space is pressed, so delay until it is down
+                keys_mods = pygame.key.get_mods()
+                pygame.time.wait(VISUALIZE)
+                pygame.event.pump()  # process event queue
+                if keys_mods & pygame.KMOD_SHIFT:
+                    break
+
+        if PRINT:
+            print("------------------------------")
+            # print("gradX: {0}".format(gradX))
+            print("prevXValue: {0}, nextXValue: {1}, currPrecision: {2}".format(prevXValue, nextXValue, currPrecision))
+            print("Next estimate for the points X0:")
+            for x in X0:
+                print(x)
 
         if currPrecision < precision:
-            return X0, "precision reached:{0} after {1} iterations".format(currPrecision, i)
+            result = X0, "precision reached:{0} after {1} iterations".format(currPrecision, i)
+            break
+
+    pygame.quit()
+
+    if result:
+        return result
 
     return X0, "maximum number of iterations reached. precision: {0}".format(currPrecision)
 
@@ -231,10 +321,12 @@ print("initial points tuple (X0)")
 for x in X0:
     print(x)
 
-# perform gradient descent to trilaterate the perturbed values.
-perturbed_result = GradDescent(X0, 0.0001, 500, 0.00001,
+# perform gradient descent to trilaterate the perturbed valu         es.
+precision = 0
+perturbed_result = GradDescent(X0, 0.0001, 500, precision,
                                lambda X: E(X, perturbed_magnitudes),
-                               lambda X: Grad_E(X, perturbed_magnitudes))
+                               lambda X: Grad_E(X, perturbed_magnitudes),
+                               points)
 
 # the value of the objective function at the found minimum
 perturbed_error = E(perturbed_result[0], perturbed_magnitudes)

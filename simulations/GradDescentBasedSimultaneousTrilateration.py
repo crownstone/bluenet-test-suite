@@ -56,22 +56,14 @@ def updateFrame(targetTriangle, estimateTriangle, bounds):
     """
     Keeps the estimate triangle on the same place as
     """
-    target_center = pointCloudCenter(targetTriangle)
-    estimate_center = pointCloudCenter(estimateTriangle)
-    offset = pointdiff(estimate_center,target_center)
-
-    if PRINT:
-        print("target_center", target_center)
-        print("estimate_center ", estimate_center)
-        print("offset ", offset)
-        print ("est - offset", pointdiff(estimate_center, offset))
+    targetTriangle = translatePointCloudAverageTo0(targetTriangle)
+    estimateTriangle = translatePointCloudAverageTo0(estimateTriangle)
 
     screen.fill(WHITE)
-    pygame.draw.polygon(screen, BLACK, [pointToScreen(targetTriangle[i], bounds) for i in range(3)], 5)
-    pygame.draw.circle(screen, BLACK, pointToScreen(target_center, bounds), 3)
+    pygame.draw.circle(screen, BLACK, pointToScreen([0, 0], bounds), 3)
 
-    pygame.draw.polygon(screen, RED, [pointToScreen(pointdiff(estimateTriangle[i], offset), bounds) for i in range(3)], 5)
-    pygame.draw.circle(screen, RED, pointToScreen(pointdiff(estimate_center, offset), bounds), 3)
+    pygame.draw.polygon(screen, BLACK, [pointToScreen(targetTriangle[i], bounds) for i in range(3)], 5)
+    pygame.draw.polygon(screen, RED, [pointToScreen(estimateTriangle[i], bounds) for i in range(3)], 5)
     pygame.display.flip()
 
 # ======================================================================================================================

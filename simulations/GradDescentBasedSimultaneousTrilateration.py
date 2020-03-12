@@ -32,32 +32,46 @@ def pointToScreen(point2d, boundaries):
     """
     return [int(mid_screen[i] + point2d[i] * mid_screen[i]/boundaries[i]) for i in range(2)]
 
-def triangleCenter(triangle):
-    return [sum([triangle[i][j] for i in range(3)]) / 3.0 for j in range(2)]
+def pointCloudCenter(points):
+    """
+    Returns the average of the points.
+    Assumes that points is a homogeneous list of lists of floats with all list sizes positive.
+    """
+    return [sum([points[i][j] for i in range(len(points))]) / 3.0 for j in range(len(points[0]))]
 
-def pointdiff2d(v0, v1):
+
+def pointdiff(v0, v1):
     return [v0[i]-v1[i] for i in range(len(v0))]
+
+
+def translatePointCloudAverageTo0(points):
+    """
+    Subtracts the average of the points from each point.
+    Assumes that points is a homogeneous list of lists of floats
+    """
+    avg = pointCloudCenter(points)
+    return [pointdiff(point, avg) for point in points]
 
 def updateFrame(targetTriangle, estimateTriangle, bounds):
     """
     Keeps the estimate triangle on the same place as
     """
-    target_center = triangleCenter(targetTriangle)
-    estimate_center = triangleCenter(estimateTriangle)
-    offset = pointdiff2d(estimate_center,target_center)
+    target_center = pointCloudCenter(targetTriangle)
+    estimate_center = pointCloudCenter(estimateTriangle)
+    offset = pointdiff(estimate_center,target_center)
 
     if PRINT:
         print("target_center", target_center)
         print("estimate_center ", estimate_center)
         print("offset ", offset)
-        print ("est - offset", pointdiff2d(estimate_center, offset))
+        print ("est - offset", pointdiff(estimate_center, offset))
 
     screen.fill(WHITE)
     pygame.draw.polygon(screen, BLACK, [pointToScreen(targetTriangle[i], bounds) for i in range(3)], 5)
     pygame.draw.circle(screen, BLACK, pointToScreen(target_center, bounds), 3)
 
-    pygame.draw.polygon(screen, RED, [pointToScreen(pointdiff2d(estimateTriangle[i], offset), bounds) for i in range(3)], 5)
-    pygame.draw.circle(screen, RED, pointToScreen(pointdiff2d(estimate_center, offset), bounds), 3)
+    pygame.draw.polygon(screen, RED, [pointToScreen(pointdiff(estimateTriangle[i], offset), bounds) for i in range(3)], 5)
+    pygame.draw.circle(screen, RED, pointToScreen(pointdiff(estimate_center, offset), bounds), 3)
     pygame.display.flip()
 
 # ======================================================================================================================

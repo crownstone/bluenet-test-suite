@@ -56,8 +56,8 @@ def updateFrame(targetTriangle, estimateTriangle, bounds):
     """
     Keeps the estimate triangle on the same place as
     """
-    targetTriangle = translatePointCloudAverageTo0(targetTriangle)
-    estimateTriangle = translatePointCloudAverageTo0(estimateTriangle)
+    # targetTriangle = translatePointCloudAverageTo0(targetTriangle)
+    # estimateTriangle = translatePointCloudAverageTo0(estimateTriangle)
 
     screen.fill(WHITE)
     pygame.draw.circle(screen, BLACK, pointToScreen([0, 0], bounds), 3)
@@ -121,11 +121,15 @@ def GradDescent(X0, stepSize, maxIters, precision, Func, GradFunc, targetTriangl
     result = None
     for i in range(maxIters):
         gradX = GradFunc(X0)
-        X0 = [[X0[s][t] - stepSize * gradX[s][t] for t in range(k)] for s in range(n)]
+        X0 = [[X0[s][t] + stepSize * gradX[s][t] for t in range(k)] for s in range(n)]
 
         # optimization with regards to numeric stability:
         # maybe subtract the average of all points in X0 from all points in X0.
         # as the function is translation invariant it may need an artificial measure like that
+        # Warning: this is NOT vanilla gradient descent anymore when you apply this.
+        X0 = translatePointCloudAverageTo0(X0)
+
+        # Similarly we could optimize so that volume is kept equal to 1 and allow for a scalar.
 
         nextXValue = Func(X0)
         currPrecision = abs(prevXValue - nextXValue)
@@ -285,10 +289,12 @@ n = len(points)
 k = len(points[0])
 print("Working in (R^{0})^{1}".format(k, n))
 
-# for numeric stability, prescale:
+# for numeric stability, prescale and move center to 0.0:
+points = translatePointCloudAverageTo0(points)
+
 for i in range(n):
     for j in range(k):
-        points[i][j] *= 0.05
+        points[i][j] *= 0.1
 
 # matrix of actual (post-prescaled) magnitudes. I.e.:
 #    dists[i][j] == d2(points[i],points[j])
@@ -298,11 +304,12 @@ actual_magnitudes = [[
     for p_j in points]
 
 print("magnitudes:")
+max_magnitude = max([max(magn) for magn in actual_magnitudes])
 for x in actual_magnitudes:
     print(x)
 
 # perturb magnitudes to emulate rssi measure error:
-magnitude_errors = errormatrix(n, 0.005)
+magnitude_errors = errormatrix(n, 0.05)
 perturbed_magnitudes = [[
     actual_magnitudes[i][j] + magnitude_errors[i][j]
     for i in range(n)]
@@ -317,7 +324,7 @@ for x in magnitude_errors:
 # happens to be a local maximum of the method, trapping the algorithm.
 # For now we use a pertubation of the original (post-prescaled) points
 # which is reasonable whence whe have a guesstimate for the crownstone positions.
-estimate_error_bound = 0.5
+estimate_error_bound = sqrt(max_magnitude)
 X0 = [[
     points[i][j] + random.uniform(-estimate_error_bound, estimate_error_bound)
     for j in range(k)]
@@ -329,7 +336,7 @@ for x in X0:
 
 # perform gradient descent to trilaterate the perturbed valu         es.
 precision = 0
-perturbed_result = GradDescent(X0, 0.0001, 500, precision,
+perturbed_result = GradDescent(X0, 0.001, 500, precision,
                                lambda X: E(X, perturbed_magnitudes),
                                lambda X: Grad_E(X, perturbed_magnitudes),
                                points)

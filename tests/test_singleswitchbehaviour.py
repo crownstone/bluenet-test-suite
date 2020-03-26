@@ -122,42 +122,71 @@ def test_scenario_0(FW):
 
     # setup the
     sendBehaviour(0, buildTwilight          ( 9, 12, 80))
-    sendBehaviour(0, buildTwilight          (11, 15, 80))
-    sendBehaviour(0, buildSwitchBehaviour   (13, 15, 80))
-    sendBehaviour(0, buildSwitchBehaviour   (14, 15, 80))
+    sendBehaviour(0, buildTwilight          (11, 15, 60))
+    sendBehaviour(0, buildSwitchBehaviour   (13, 15, 100))
+    sendBehaviour(0, buildSwitchBehaviour   (14, 15, 30))
 
     # a list of 2-tuples, containing a timestamp and a 0-ary 'evennt' method
     events = [
-        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
                                             "Overridestate should've been set to translucent")],
 
-        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
-                                            "Overridestate should've been equal to twilight value")],
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                            "aggregatedState should've been equal to twilight value")],
+        # behaviour 0 becomes active
+        [getTime_uint32(9, 1), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                            "Overridestate should still be unset")],
+
+        [getTime_uint32(9, 1), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                            "aggregatedState should be off as nothing has turned it on")],
 
         [getTime_uint32(10, 0), sendSwitchCraftCommand],
 
         [getTime_uint32(10, 1), bind(expect, "SwitchAggregator", "overrideState", "255",
-                                             "Overridestate should've been set to translucent")],
+                                             "Overridestate should've been set to translucent after switchcraft")],
 
         [getTime_uint32(10, 1), bind(expect, "SwitchAggregator", "aggregatedState", "80",
-                                             "Overridestate should've been equal to twilight value")],
-
+                                             "aggregatedState should've been equal to twilight value after switchcraft")],
+        # behaviour 1 becomes active
         [getTime_uint32(11, 1), bind(expect, "SwitchAggregator", "overrideState", "255",
-                                             "Overridestate should've been set to translucent")],
+                                             "Overridestate should've been set to translucent after switchcraft")],
 
-        [getTime_uint32(11, 1), bind(expect, "SwitchAggregator", "aggregatedState", "80",
-                                             "Overridestate should've been equal to twilight value")]
+        [getTime_uint32(11, 1), bind(expect, "SwitchAggregator", "aggregatedState", "60",
+                                             "aggregatedState should've been equal to twilight value because of conflict resolution")],
+        # behaviour 2 becomes active
+        [getTime_uint32(13, 1), bind(expect, "SwitchAggregator", "overrideState", "255",
+                                             "Overridestate should still be set to translucent after switchcraft, reset happens when behaviour falls is cleared")],
+
+        [getTime_uint32(13, 1), bind(expect, "SwitchAggregator", "aggregatedState", "60",
+                                             "aggregatedState should still been equal to conflict resolved twilight value as behaviour has higher intensity value")],
+        # behaviour 3 becomes active
+        [getTime_uint32(14, 1), bind(expect, "SwitchAggregator", "overrideState", "255",
+                                             "Overridestate should still be set to translucent after switchcraft, reset happens when behaviour falls is cleared")],
+
+        [getTime_uint32(14, 1), bind(expect, "SwitchAggregator", "aggregatedState", "30",
+                                             "aggregatedState should still been equal to conflict resolved switchbehaviour value as it has lower intensity value")],
+        # all behaviours become inactive
+        [getTime_uint32(15, 1), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                             "Overridestate should've been reset after state match")],
+
+        [getTime_uint32(15, 1), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                             "aggregatedState should've been set to 0")]
     ]
 
-    # run the event list in order of the times, skipping forward using a setTime call each event
+    # run the event list in order of the times, skipping forward using a setTime call if necessary
+    previous_t = 0
     for i in sorted(events, key=lambda items: items[0]):
         t = i[0]
         evt = i[1]
 
-        setTime_uint32(t)
+        if t != previous_t:
+            setTime_uint32(t)
+
         response = evt()
         if response:
             return response
+
+        t = previous_t
 
     return TestFramework.success()
 

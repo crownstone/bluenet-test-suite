@@ -8,7 +8,6 @@ from testframework.framework import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 from BluenetLib.lib.packets.behaviour.Behaviour import *
-from decimal import *   # for -infinity
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -193,6 +192,9 @@ def build_scenario_0():
 
 def build_scenario_1():
     """
+    This scenario tests if a switchcraft induced override with value zero
+    will 'mute' a subsequent switching behaviour.
+
     Returns a list of 2-lists: [time, 0ary function] that describes exactly
     what needs to be executed when. The 0ary functions return a falsey value
     when it succeeded, and a string describing what went wrong else.
@@ -200,7 +202,7 @@ def build_scenario_1():
 
     def setup_scenario_1():
         sendBehaviour(0, buildTwilight          ( 9, 15, 80))
-        sendBehaviour(3, buildSwitchBehaviour   (12, 15, 70))
+        sendBehaviour(1, buildSwitchBehaviour   (12, 15, 70))
 
     events = [
         [None, setup_scenario_1],
@@ -248,6 +250,92 @@ def build_scenario_1():
 
     return events
 
+def build_scenario_2():
+    """
+    This scenario tests if a switchcraft induced override with value 0 is cleared
+    when all switching behaviours become inactive.
+
+    It is crucial that the switchcraft event takes place when a switching behaviour
+    is active - otherwise the zero override will not clear when they become inactive
+    (by design). (This distinguishes it from scenario 1.)
+
+    Returns a list of 2-lists: [time, 0ary function] that describes exactly
+    what needs to be executed when. The 0ary functions return a falsey value
+    when it succeeded, and a string describing what went wrong else.
+    """
+
+    def setup_scenario_2():
+        sendBehaviour(0, buildTwilight          ( 9, 16, 80))
+        sendBehaviour(1, buildSwitchBehaviour   (11, 14, 70))
+        sendBehaviour(2, buildSwitchBehaviour   (13, 14, 30))
+        sendBehaviour(3, buildSwitchBehaviour   (15, 16, 50))
+
+    events = [
+        [None, setup_scenario_2],
+
+        # before any behaviour kicks in
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                    "Overridestate should've been cleared before running scenario")],
+
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                    "aggregatedState should be 0 when no override or behaviour active")],
+
+        # behaviour 0, twilight, becomes active, nothing happens.
+        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                    "Overridestate should've not have changed when twilight becomes active")],
+
+        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                    "aggregatedState should be 0 when no override or behaviour active")],
+
+        # switchcraft occurs
+        [getTime_uint32(10,0), sendSwitchCraftCommand],
+
+        [getTime_uint32(10, 0), bind(expect, "SwitchAggregator", "overrideState", "255",
+                                    "Overridestate should've been set to translucent after switchcraft")],
+
+        [getTime_uint32(10, 0), bind(expect, "SwitchAggregator", "aggregatedState", "80",
+                                    "aggregatedState should be equal to twilight value when translucent override is set")],
+
+        # behaviour 1, switch, becomes active, it has lower intensity so gets used for the agregated state
+        [getTime_uint32(11, 0), bind(expect, "SwitchAggregator", "overrideState", "ff",
+                                    "Overridestate should've been cleared until all switching behaviours become inactive")],
+
+        [getTime_uint32(11, 0), bind(expect, "SwitchAggregator", "aggregatedState", "70",
+                                    "aggregatedState should be equal to the minimum of behaviour state and twilight state")],
+
+        # switchcraft occurs
+        [getTime_uint32(12, 0), sendSwitchCraftCommand],
+
+        [getTime_uint32(12, 0), bind(expect, "SwitchAggregator", "overrideState", "0",
+                                     "Overridestate should've been set 0 after switchcraft")],
+
+        [getTime_uint32(12, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                     "aggregatedState should be equal override state when it has a non-translucent value")],
+
+        # behaviour 2, switch, becomes active, it has lower intensity so gets used for the agregated state
+        [getTime_uint32(13, 0), bind(expect, "SwitchAggregator", "overrideState", "0",
+                                     "Overridestate shouldn't have been changed when switch behaviour becomes active")],
+
+        [getTime_uint32(13, 0), bind(expect, "SwitchAggregator", "aggregatedState", "30",
+                                     "aggregatedState should be equal to the minimum of behaviour state and twilight state")],
+
+        # all behaviours become inactive, override should clear
+        [getTime_uint32(14, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                     "Overridestate should have been cleared when all switch behaviours become inactive")],
+
+        [getTime_uint32(14, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                     "aggregatedState should be 0 when no behaviour or override is active")],
+
+        # behaviour 3, switch becomes active, as override cleared it should express in the aggregatedstate
+        [getTime_uint32(15, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                     "Overridestate shouldn't have changed when switch behaviour becomes active")],
+
+        [getTime_uint32(15, 0), bind(expect, "SwitchAggregator", "aggregatedState", "50",
+                                     "aggregatedState should be equal to behaviour state when it is less than twilight state")],
+
+    ]
+
+    return events
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Definitions of how to run the test
@@ -260,16 +348,16 @@ def run_scenario(FW, eventlist):
     any non-falsey time events in the list.
     """
     previous_t = 0
-    for i in sorted(eventlist, key=lambda items: items[0] if items[0] else Decimal("-Infinity")):
+    for i in sorted(eventlist, key=lambda items: items[0] if items[0] else -1):
         t = i[0]
         evt = i[1]
 
-        if t != previous_t:
+        if t != previous_t and t >= 0:
             setTime_uint32(t)
 
         response = evt()
         if response:
-            return response
+            return "{0}:{1}h: {2} ".format(t//3600, (t%3600)//60, response)
 
         t = previous_t
 
@@ -287,6 +375,7 @@ def run_all_scenarios(FW):
     scenarios = [
         build_scenario_0(),
         build_scenario_1(),
+        build_scenario_2(),
     ]
 
     for scenario in scenarios:

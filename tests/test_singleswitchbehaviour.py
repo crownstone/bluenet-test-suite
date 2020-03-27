@@ -8,7 +8,12 @@ from testframework.framework import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 from BluenetLib.lib.packets.behaviour.Behaviour import *
+from decimal import *   # for -infinity
 
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Preliminary definitions
+# ----------------------------------------------------------------------------------------------------------------------
 
 def buildSwitchBehaviour(from_hours, to_hours, intensity):
     switchbehaviour = Behaviour()
@@ -81,6 +86,9 @@ def sendClearBehaviourStoreEvent():
     sendEventToCrownstone(0x100 + 170 + 6, [])
     SleepAfterUartCommand()
 
+# ----------------------------------------------------------------------------------------------------------------------
+# General test framework utilities
+# ----------------------------------------------------------------------------------------------------------------------
 
 def expect(FW, classname, variablename, expectedvalue, errormessage=""):
     """
@@ -108,7 +116,7 @@ def expect(FW, classname, variablename, expectedvalue, errormessage=""):
 # the test will sort the event times and execute them until the first returns a non-Falsey value
 # when that happens, it considers the scenario failed and reports back the returned value.
 
-def bind(func,*args):
+def bind(func, *args):
     """
     Returns a nullary function that calls func with the given arguments.
     """
@@ -116,18 +124,26 @@ def bind(func,*args):
         return func(*args)
     return noarg_func
 
+# ----------------------------------------------------------------------------------------------------------------------
+# Definition of the scenarios
+# ----------------------------------------------------------------------------------------------------------------------
 
-def test_scenario_0(FW):
-    print("##### test scenario 0 #####")
+def build_scenario_0():
+    """
+    Returns a list of 2-lists: [time, 0ary function] that describes exactly
+    what needs to be executed when. The 0ary functions return a falsey value
+    when it succeeded, and a string describing what went wrong else.
+    """
 
-    # setup the
-    sendBehaviour(0, buildTwilight          ( 9, 12, 80))
-    sendBehaviour(0, buildTwilight          (11, 15, 60))
-    sendBehaviour(0, buildSwitchBehaviour   (13, 15, 100))
-    sendBehaviour(0, buildSwitchBehaviour   (14, 15, 30))
+    def setup_scenario_0():
+        sendBehaviour(0, buildTwilight          ( 9, 12, 80))
+        sendBehaviour(1, buildTwilight          (11, 15, 60))
+        sendBehaviour(2, buildSwitchBehaviour   (13, 15, 100))
+        sendBehaviour(3, buildSwitchBehaviour   (14, 15, 30))
 
-    # a list of 2-tuples, containing a timestamp and a 0-ary 'evennt' method
     events = [
+        [None, setup_scenario_0],
+
         [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
                                             "Overridestate should've been set to translucent")],
 
@@ -173,9 +189,21 @@ def test_scenario_0(FW):
                                              "aggregatedState should've been set to 0")]
     ]
 
-    # run the event list in order of the times, skipping forward using a setTime call if necessary
+    return events
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Definitions of how to run the test
+# ----------------------------------------------------------------------------------------------------------------------
+
+def run_scenario(FW, eventlist):
+    """
+    run the event list in order of the times, skipping forward using a setTime call if necessary.
+    eventlist may contain lists with item[0] falsey, in which case the event will be executed before
+    any non-falsey time events in the list.
+    """
     previous_t = 0
-    for i in sorted(events, key=lambda items: items[0]):
+    for i in sorted(eventlist, key=lambda items: items[0] if items[0] else Decimal("-Infinity")):
         t = i[0]
         evt = i[1]
 
@@ -191,9 +219,7 @@ def test_scenario_0(FW):
     return TestFramework.success()
 
 
-
-
-def test_method(FW):
+def run_all_scenarios(FW):
     fullReset()
     setAllowDimming(True)
     sendClearSwitchAggregatorOverride()
@@ -202,18 +228,18 @@ def test_method(FW):
     time.sleep(5)
 
     result = []
-    scenarios = [test_scenario_0]
+    scenarios = [build_scenario_0()]
 
     for scenario in scenarios:
-        result += [scenario(FW)]
+        result += [run_scenario(FW, scenario)]
 
     return result
 
 
 if __name__ == "__main__":
-    with TestFramework(test_method) as frame:
-        if frame != None:
-            results = frame.test_run()
+    with TestFramework(run_all_scenarios) as framework:
+        if framework is None:
+            results = framework.test_run()
             prettyprinter = pprint.PrettyPrinter(indent=4)
             print ("Test finished with result:")
             for result in results:

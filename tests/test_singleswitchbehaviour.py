@@ -337,6 +337,57 @@ def build_scenario_2():
 
     return events
 
+def build_scenario_3():
+    """
+    Tests if override is cleared when all switch behaviours go out of scope.
+    And tests switch command with opaque value.
+
+    Returns a list of 2-lists: [time, 0ary function] that describes exactly
+    what needs to be executed when. The 0ary functions return a falsey value
+    when it succeeded, and a string describing what went wrong else.
+    """
+
+    def setup_scenario_3():
+        sendBehaviour(0,        buildTwilight(9, 14, 80))
+        sendBehaviour(1, buildSwitchBehaviour(9, 12, 70))
+
+    events = [
+        [None, setup_scenario_3],
+
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                            "Overridestate should've been set to translucent")],
+
+        [getTime_uint32(8, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                            "aggregatedState should be 0 when no behaviours are active, nor override exists")],
+
+        # behaviours both become active
+        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                            "Overridestate should've been set to translucent")],
+
+        [getTime_uint32(9, 0), bind(expect, "SwitchAggregator", "aggregatedState", "70",
+                                            "aggregatedState should be equal to minimum of active behaviour and twilight")],
+
+        # switch command occurs
+
+        [getTime_uint32(10, 0), bind(sendSwitchCommand, 50)],
+
+        [getTime_uint32(10, 0), bind(expect, "SwitchAggregator", "overrideState", "50",
+                                    "Overridestate should've been set to translucent")],
+
+        [getTime_uint32(10, 0), bind(expect, "SwitchAggregator", "aggregatedState", "50",
+                                    "aggregatedState should be equal to override state when it is opaque")],
+
+        # all behaviours become inactive
+        [getTime_uint32(11, 0), bind(expect, "SwitchAggregator", "overrideState", "-1",
+                                    "Overridestate should've been cleared when it is non-zero and all switch behaviours become inactive")],
+
+        [getTime_uint32(11, 0), bind(expect, "SwitchAggregator", "aggregatedState", "0",
+                                    "aggregatedState should be equal to 0 when no override state or switch behaviours are active")],
+
+    ]
+
+    return events
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Definitions of how to run the test
 # ----------------------------------------------------------------------------------------------------------------------
@@ -376,6 +427,7 @@ def run_all_scenarios(FW):
         build_scenario_0(),
         build_scenario_1(),
         build_scenario_2(),
+        build_scenario_3(),
     ]
 
     for scenario in scenarios:

@@ -168,7 +168,6 @@ class TestScenario:
         )
 
 
-
 def build_scenario_0(FW):
     """
     Returns a list of 2-lists: [time, 0ary function] that describes exactly
@@ -384,11 +383,43 @@ def build_scenario_3(FW):
 
     return scenario.eventlist
 
+def build_scenario_4(FW):
+    """
+    Opaque switch command induces override should be cleared when behaviour turns
+    off.
+    """
+
+    def setup_scenario():
+        sendBehaviour(0,        buildTwilight(9, 12, 70))
+        sendBehaviour(1, buildSwitchBehaviour(10, 11, 80))
+
+    scenario = TestScenario(FW)
+    scenario.addEvent(setup_scenario)
+
+    scenario.setTime(9, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "Overridestate should've been set to translucent")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
+
+    scenario.setTime(10, 0)
+    scenario.addEvent(bind(sendSwitchCommand, 50))
+    scenario.addExpect("SwitchAggregator", "overrideState", "50", "Overridestate should've been set to last switch command")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "50", "aggregatedState should match the override state")
+
+    scenario.setTime(11, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "50", "Overridestate should not change after this switch behaviour becomes active")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "50", "aggregatedState should match the override state")
+
+    scenario.setTime(12, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "Overridestate should have cleared when behaviour deactivated")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "50", "aggregatedState should be 0 when no override or switch behaviour is active")
+
+    return scenario.eventlist
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Definitions of how to run the test
 # ----------------------------------------------------------------------------------------------------------------------
 
-def run_scenario(FW, eventlist):
+def run_scenario( eventlist):
     """
     run the event list in order of the times, skipping forward using a setTime call if necessary.
     eventlist may contain lists with item[0] falsey, in which case the event will be executed before
@@ -429,6 +460,7 @@ def run_all_scenarios(FW):
         ["1", build_scenario_1(FW)],
         ["2", build_scenario_2(FW)],
         ["3", build_scenario_3(FW)],
+        ["4", build_scenario_4(FW)],
     ]
 
     for scenariodescription in scenarios:
@@ -439,7 +471,7 @@ def run_all_scenarios(FW):
 
         time.sleep(1)
 
-        result += [run_scenario(FW, scenariodescription[1])]
+        result += [run_scenario(scenariodescription[1])]
 
     return result
 

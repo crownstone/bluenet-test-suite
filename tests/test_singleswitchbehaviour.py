@@ -465,6 +465,50 @@ def build_scenario_5(FW):
 
     return scenario.eventlist
 
+
+def build_scenario_7(FW):
+    """
+    Translucent switch commands use resolved behaviour intensity when there are active ones.
+
+    (Will happen when  multiple switchcrafts happen during a behaviour active period).
+    """
+
+    def setup_scenario():
+        sendBehaviour(0, buildSwitchBehaviour(9, 12, 80))
+
+    scenario = TestScenario(FW)
+    scenario.addEvent(setup_scenario)
+
+    # blank canvas
+    scenario.setTime(8, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
+
+    # switch behaviour becomes active
+    scenario.setTime(9, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "80", "aggregatedState should be set to active switch behaviour value")
+
+    # switchcraft occurs
+    scenario.setTime(10, 0)
+    scenario.addEvent(sendSwitchCraftCommand)
+    scenario.addExpect("SwitchAggregator", "overrideState", "0", "overridestate should be set to 0 when toggling switchcraft in 'on' state")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should match the override state")
+
+    # switchcraft occurs
+    scenario.setTime(11, 0)
+    scenario.addEvent(sendSwitchCraftCommand)
+    scenario.addExpect("SwitchAggregator", "overrideState", "255", "overridestate should have been set to translucent when toggling switchcraft in off state")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "70", "aggregatedState should be resolved to switchbehaviour value as override is translucent")
+
+    # behaviours become inactive
+    scenario.setTime(12, 0)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should have been cleared when behaviour became inactive")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no switch behaviour or override state is active")
+
+    return scenario.eventlist
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Definitions of how to run the test
 # ----------------------------------------------------------------------------------------------------------------------
@@ -512,6 +556,7 @@ def run_all_scenarios(FW):
         ["3", build_scenario_3(FW)],
         ["4", build_scenario_4(FW)],
         ["5", build_scenario_5(FW)],
+        ["7", build_scenario_7(FW)],
     ]
 
     for scenariodescription in scenarios:

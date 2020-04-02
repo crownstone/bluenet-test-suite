@@ -51,8 +51,10 @@ def setTime_uint32(time_as_uint32):
                             Conversion.uint32_to_uint8_array(time_as_uint32))
     sleepAfterUartCommand()
 
-def setTime_hmd(hours, minutes, day=0):
-    setTime(getTime_uint32(hours,minutes,day))
+def setTime_hmd(hours, minutes, day=None):
+    setTime(getTime_uint32(hours,
+                           minutes,
+                           day if day else 0))
 
 
 def sendBehaviour(index, behaviour):
@@ -107,7 +109,7 @@ def expect(FW, classname, variablename, expectedvalue, errormessage=""):
         FW.print()
         return failmsg
     else:
-        print("expectation correct: {0}.{1} has have value {2} ({3})".format(
+        print("expectation correct: {0}.{1} == {2} ({3})".format(
             classname, variablename, expectedvalue, errormessage))
 
     return None
@@ -129,6 +131,40 @@ def bind(func, *args):
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios
 # ----------------------------------------------------------------------------------------------------------------------
+
+
+class TestScenario:
+    """
+    Builder class for scenarios, as there are many of those things we build.
+
+    You can add expected values or other events to happen/measure at specific times.
+
+    Keeps track of a 'current time' which is initially None so that you don't have to
+    have to retype all the same thing over and over.
+
+    clearing current time (or setting it to None) will allow you to add 'setup' functions
+    to the event list.
+    """
+    def __init__(self, FW):
+        self.fw = FW
+        self.eventlist = []
+        self.currenttime = None
+
+    def clearTime(self):
+        self.currenttime = None
+
+    def setTime(self, hours, minutes, days=None):
+        self.currenttime = getTime_uint32(minutes, hours, days)
+
+    def addEvent(self, time, event_func):
+        self.eventlist += [[time, event_func]]
+
+    def addExpect(self, classname, variablename, expectedvalue, errormessage=""):
+        self.addEvent(
+            self.currenttime,
+            bind(expect, self.fw, classname, variablename, expectedvalue, errormessage)
+        )
+
 
 def build_scenario_0(FW):
     """

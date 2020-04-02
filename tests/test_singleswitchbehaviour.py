@@ -156,14 +156,17 @@ class TestScenario:
     def setTime(self, hours, minutes, days=None):
         self.currenttime = getTime_uint32(minutes, hours, days)
 
-    def addEvent(self, time, event_func):
-        self.eventlist += [[time, event_func]]
+    def addTimeAndEvent(self, event_time, event_func):
+        self.eventlist += [[event_time, event_func]]
+
+    def addEvent(self, event_func):
+        self.addTimeAndEvent(self.currenttime, event_func)
 
     def addExpect(self, classname, variablename, expectedvalue, errormessage=""):
         self.addEvent(
-            self.currenttime,
             bind(expect, self.fw, classname, variablename, expectedvalue, errormessage)
         )
+
 
 
 def build_scenario_0(FW):

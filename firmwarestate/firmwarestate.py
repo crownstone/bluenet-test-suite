@@ -106,7 +106,7 @@ class FirmwareState:
         Returns a list of pointers (keys in the statedict) to objects that fail this test, including:
             - those entries which do not contain given variablename
             - those entries which dissatisfy equality.
-        Returns None if no objects of given classanem where found.
+        Returns None if no objects of given classname where found.
 
         Note: value will be stringified.
         """

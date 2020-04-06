@@ -13,7 +13,6 @@
 # 	dimmer power timeout
 
 import time
-import uuid
 
 from testframework.framework import *
 from firmwarecontrol.datatransport import *
@@ -38,29 +37,26 @@ def test_bootloadsflashintooverride_loopbody(FW, intensity):
     # print("allow device to reset and startup")
     time.sleep(10)
 
-    # Test SwitchAggregator overrideState
+    # Test SwitchAggregator.overrideState
     expected_override_state = min(max(0, intensity), 100)
     if FW.assertFindFailures("SwitchAggregator", 'overrideState', expected_override_state):
-        failureid = uuid.uuid4()
-        print("----- Failure: {0} -----".format(failureid))
         FW.print()
-        return TestFramework.failure("{0} overrideState should've been {1} after reset".format(
-                failureid, expected_override_state))
+        return TestFramework.failure("overrideState should've been {0} after reset".format(
+                expected_override_state))
 
-    # Test HwSwitch.relay state
+    # Test Relay.on
     expected_relay_state = bool((intensity >> 7) & 1)
     if FW.assertFindFailures("Relay", 'on', expected_relay_state):
-        failureid = uuid.uuid4()
-        print("----- Failure: {0} -----".format(failureid))
-        return TestFramework.failure("{0} relaystate should've been {1} after reset".format(
-                failureid, expected_relay_state))
+        FW.print()
+        return TestFramework.failure("relaystate should've been {0} after reset".format(
+                expected_relay_state))
 
     return TestFramework.success()
 
 
 def test_bootloadsflashintooverride(FW):
     result = []
-    for intensity in [0, 128]:
+    for intensity in [0, 100,128]:
         result += [test_bootloadsflashintooverride_loopbody(FW, intensity)]
     return result
 

@@ -3,6 +3,8 @@ import unittest
 from firmwarecontrol import *
 from firmwarestate.firmwarestate import *
 from BluenetLib import Bluenet
+import uuid
+from colorama import Fore, Back, Style
 
 
 # TODO: Convert to unittest library so that tests can be automatically discovered / executed
@@ -42,16 +44,26 @@ class TestFramework:
 
     @classmethod
     def success(cls):
-        return "Result: Success"
+        return "{0}Result: Success{1}".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL)
 
     @classmethod
     def failure(cls, cause=""):
+        """
+        Returns a formatted failure string containing a uuid that is also
+        printed during this call so that the failure can be easily be retrieved
+        in the logs as well as final output.
+        """
+        failureid = uuid.uuid4()
+        print("Failure({0}) reported".format(failureid))
+
+        failstr = "{0}Result: Failure ({2}){1}".format(Style.BRIGHT + Fore.RED, Style.RESET_ALL, failureid)
+
         if cause:
-            return "Result: Failure: " + cause
-        return "Result: Failure"
+            failstr += ": " + cause
+        return failstr
 
     def test_run(self):
         """
-        Runs the testfunction which this instance was constructed with and prints its result.
+        Runs the testfunction which this instance was constructed with and returns its result.
         """
-        print(self.test_impl(self.firmwarestate))
+        return self.test_impl(self.firmwarestate)

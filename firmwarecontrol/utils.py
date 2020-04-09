@@ -79,4 +79,7 @@ def sendSwitchCraftCommand():
 
 def sendClearBehaviourStoreEvent():
     sendEventToCrownstone(0x100 + 170 + 6, [])
+
+def setBehaviourHandlerActive(isactive):
+    sendCommandToCrownstone(ControlType.BEHAVIOURHANDLER_SETTINGS, [0x01 if isactive else 0x00])
     sleepAfterUartCommand()

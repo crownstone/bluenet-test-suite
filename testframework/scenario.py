@@ -1,5 +1,5 @@
 from testframework.events import *
-from testframework.utils import *
+from firmwarecontrol.utils import *
 
 class TestScenario:
     """

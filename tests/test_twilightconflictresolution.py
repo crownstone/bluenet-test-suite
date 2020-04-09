@@ -1,7 +1,5 @@
-import time
-
 from testframework.framework import *
-from testframework.utils import *
+from firmwarecontrol.utils import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 

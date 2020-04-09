@@ -2,10 +2,7 @@
 All tests that concern a single switch behaviour.
 """
 
-import time
-
 from testframework.framework import *
-from testframework.utils import *
 from testframework.scenario import *
 
 # ----------------------------------------------------------------------------------------------------------------------

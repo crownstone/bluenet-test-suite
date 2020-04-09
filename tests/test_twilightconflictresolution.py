@@ -1,22 +1,9 @@
 import time
 
 from testframework.framework import *
+from testframework.utils import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
-from BluenetLib.lib.packets.behaviour.Behaviour import *
-
-
-def buildTwilight(from_hours, to_hours, intensity):
-    twilight = Twilight()
-    twilight.setTimeFrom(from_hours % 24, 0)
-    twilight.setTimeTo(to_hours % 24, 0)
-    twilight.setDimPercentage(intensity)
-    return twilight
-
-
-def sendTwilight(index, twilight):
-    packet = twilight.getPacket()
-    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + twilight.getPacket())
 
 
 class test_case:

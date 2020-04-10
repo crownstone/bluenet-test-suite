@@ -12,8 +12,6 @@ Copyrights belong to the team of Crownstone B.V. and are provided under a noncon
 * Crownstone B.V., https://crownstone.rocks
 * Stationsplein 45 d1.118, 3013 AK Rotterdam, The Netherlands
 
-This code is built on the shoulders of giants. Our special thanks go to Christopher Mason for the initial C++ code base at [http://hg.cmason.com/nrf](http://hg.cmason.com/nrf) and Trond Einar Snekvik, department of Engineering Cybernetics at Norwegian University of Science and Technology (and Nordic Semiconductor) for the meshing functionality ([OpenMesh](https://github.com/NordicSemiconductor/nRF51-ble-bcast-mesh)) and Nordic Semiconductor for the beautiful SoftDevices they have developed. The code of Mason falls under the same triple license. The code by Nordic falls under the license from Nordic (and that code is not part of this repository).
-
 <p align="center">
 	<a href="http://www.gnu.org/licenses/lgpl-3.0">
     <img src="https://img.shields.io/badge/License-LGPL%20v3-blue.svg" alt="License: LGPL v3">

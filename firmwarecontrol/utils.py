@@ -53,6 +53,7 @@ def setTime_hmd(hours, minutes, day=None):
 
 
 def sendBehaviour(index, behaviour):
+    print("send behaviour: ", [index] + behaviour.getPacket())
     sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.getPacket())
     sleepAfterUartCommand()
 
@@ -67,12 +68,19 @@ def sendSwitchCommand(intensity):
     sleepAfterUartCommand()
 
 
-def sendClearSwitchAggregatorOverride():
+def sendClearSwitchAggregatorOverrideState():
     sendSwitchCommand(0xfe)
     sleepAfterUartCommand()
 
+def sendClearSwitchAggregatorAggregatedState():
+    sendSwitchCommand(0xfd)
+    sleepAfterUartCommand()
 
-def sendSwitchCraftCommand():
+def sendClearSwitchAggregatorOverrideAndAggregatedState():
+        sendSwitchCommand(0xfc)
+        sleepAfterUartCommand()
+
+def sendSwitchCraftEvent():
     sendEventToCrownstone(0x100 + 20 + 2, [])
     sleepAfterUartCommand()
 

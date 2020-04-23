@@ -16,12 +16,21 @@ def bind(func, *args):
     return noarg_func
 
 
-def expect(FW, classname, variablename, expectedvalue, errormessage=""):
+def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=False):
     """
     Checks if the expected value in FW.
     Returns TestFramework failure message when there is one, else None.
     """
     failures = FW.assertFindFailures(classname, variablename, expectedvalue)
+
+    if failures is None:
+        failmsg = TestFramework.failure("{2}: no value found for {0}.{1}".format(
+            classname, variablename, errormessage))
+        if verbose:
+            FW.print()
+
+        return failmsg
+
     if failures:
         actualvalue = None
         try:
@@ -31,9 +40,12 @@ def expect(FW, classname, variablename, expectedvalue, errormessage=""):
 
         failmsg = TestFramework.failure("{4}: Expected {0}.{1} to have value {2}, got {3}".format(
             classname, variablename, expectedvalue, actualvalue, errormessage))
-        FW.print()
+        if verbose:
+            FW.print()
+
         return failmsg
-    else:
+
+    if verbose:
         print("expectation correct: {0}.{1} == {2} ({3})".format(
             classname, variablename, expectedvalue, errormessage))
 

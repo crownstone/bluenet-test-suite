@@ -129,7 +129,7 @@ def initializeUSB(bluenet_instance, portname, a_range):
     """
     for i in a_range:
         try:
-            port = "/dev/{0}{1}".format(portname,i)
+            port = "/dev/{0}{1}".format(portname, i)
             bluenet_instance.initializeUSB(port)
             return port
         except Exception as err:
@@ -181,6 +181,8 @@ class Main:
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
                         self.fwState.print()
+                    if event.key == ord('q')  or event.key == ord('Q') or event.key == pygame.K_ESCAPE:
+                        run = False
 
 if __name__ == "__main__":
     with Main() as m:

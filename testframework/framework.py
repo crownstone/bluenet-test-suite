@@ -43,8 +43,8 @@ class TestFramework:
         self.bluenet.stop()
 
     @classmethod
-    def success(cls):
-        return "{0}Result: Success{1}".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL)
+    def success(cls, note=""):
+        return "{0}Result: Success{1} ({2})".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL, note)
 
     @classmethod
     def failure(cls, cause=""):

@@ -15,7 +15,6 @@ def bind(func, *args):
         return func(*args)
     return noarg_func
 
-
 def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=False):
     """
     Checks if the expected value in FW.
@@ -31,13 +30,13 @@ def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=
 
         return failmsg
 
-    if failures:
-        actualvalue = None
-        try:
-            actualvalue = FW.statedict[failures[0]].get(variablename)
-        except:
-            actualvalue = "<not found>"
+    actualvalue = None
+    try:
+        actualvalue = FW.statedict[failures[0]].get(variablename)
+    except:
+        actualvalue = "<not found>"
 
+    if failures:
         failmsg = TestFramework.failure("{4}: Expected {0}.{1} to have value {2}, got {3}".format(
             classname, variablename, expectedvalue, actualvalue, errormessage))
         if verbose:
@@ -47,6 +46,42 @@ def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=
 
     if verbose:
         print("expectation correct: {0}.{1} == {2} ({3})".format(
-            classname, variablename, expectedvalue, errormessage))
+            classname, variablename, actualvalue, errormessage))
+
+    return None
+
+
+def expectAny(FW, classname, variablename, expectedvalues, errormessage="", verbose=False):
+    """
+    Same as expect, but expected values must be an iterable object containing
+    the expectedvalues and will only fail if the classname.variablename doesn't
+    match any of the values in this iterable.
+    """
+    failures = FW.assertFindFailuresMulti(classname, variablename, expectedvalues)
+    if failures is None:
+        failmsg = TestFramework.failure("{2}: no value found for {0}.{1}".format(
+            classname, variablename, errormessage))
+        if verbose:
+            FW.print()
+
+        return failmsg
+
+    actualvalue = None
+    try:
+        actualvalue = FW.statedict[failures[0]].get(variablename)
+    except:
+        actualvalue = "<not found>"
+
+    if failures:
+        failmsg = TestFramework.failure("{4}: Expected {0}.{1} to have value in [{2}], got {3}".format(
+            classname, variablename, ",".join(expectedvalues), actualvalue, errormessage))
+        if verbose:
+            FW.print()
+
+        return failmsg
+
+    if verbose:
+        print("expectation correct: {0}.{1} == {2} ({3})".format(
+            classname, variablename, actualvalue, errormessage))
 
     return None

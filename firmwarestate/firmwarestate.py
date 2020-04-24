@@ -99,28 +99,31 @@ class FirmwareState:
         prettyprint(self.statedict)
         prettyprint(self.historylist)
 
-    def assertFindFailures(self, classname, expressionname, value):
+    def assertFindFailuresMulti(self, classname, expressionname, values):
         """
-        Checks if for all objects of type [classname] the entry for [expressionname] has given [value].
+        Checks if for all objects of type [classname] the entry for [expressionname] a value in [values].
 
         Returns a list of pointers (keys in the statedict) to objects that fail this test, including:
             - those entries which do not contain given variablename
-            - those entries which dissatisfy equality.
+            - those entries which dissatisfy containment test.
         Returns None if no objects of given classname where found.
 
         Note: value will be stringified.
         """
         failures = []
+        strvalues = [str(value) for value in values]
         existsAny = False
         for ptr, obj in self.statedict.items():
             if obj.get('typename') == classname:
                 existsAny = True
-                if obj.get(expressionname) != str(value):
+                if obj.get(expressionname) not in strvalues:
                     failures += [ptr]
         if existsAny:
             return failures
         return None
 
+    def assertFindFailures(self, classname, expressionname, value):
+        return self.assertFindFailuresMulti(classname, expressionname, [value])
 
 def initializeUSB(bluenet_instance, portname, a_range):
     """

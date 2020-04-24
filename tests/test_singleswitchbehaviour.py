@@ -11,6 +11,22 @@ def common_setup():
     sendClearBehaviourStoreEvent()
     time.sleep(1)
 
+def add_common_setup(scenario):
+    scenario.clearTime()
+    scenario.addEvent(common_setup)
+
+    # behaviour engine resolves to 0 when no behaviours are stored
+    scenario.addExpectAny("SwitchAggregator", "behaviourState", ["0","-1"], "behaviourState should've been reset after common init", True)
+
+    # twilight engine resolves to 100 when no behaviours are stored
+    scenario.addExpectAny("SwitchAggregator", "twilightState", ["100", "-1"], "twilightState should've been reset after common init")
+
+    # override state is a hasvalue that should be empty after clearing it
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been reset after common init")
+
+    # aggregated state might have been set to -1, or 0 depending on wether updateState has already been called
+    scenario.addExpectAny("SwitchAggregator", "aggregatedState", ["0", "-1"], "aggregatedState should've been reset after common init", True)
+
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios
 # ----------------------------------------------------------------------------------------------------------------------
@@ -22,24 +38,18 @@ def build_scenario_0(FW):
     when it succeeded, and a string describing what went wrong else.
     """
 
-    def setup_scenario_0():
-        common_setup()
+    def setup_scenario():
         sendBehaviour(0, buildTwilight          ( 9, 12, 80))
         sendBehaviour(1, buildTwilight          (11, 15, 60))
         sendBehaviour(2, buildSwitchBehaviour   (13, 15, 100))
         sendBehaviour(3, buildSwitchBehaviour   (14, 15, 30))
 
     scenario = TestScenario(FW, "scenario 0")
-    scenario.addEvent(setup_scenario_0)
-
-    # nothing is active yet
-    # scenario.setTime(8, 0)
-    scenario.clearTime() # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should've been equal to twilight value")
+    add_common_setup(scenario)
+    scenario.addEvent(setup_scenario)
 
     # behaviour 0 becomes active
-    scenario.setTime(9, 1)
+    scenario.setTime(9, 0)
     scenario.addExpect( "SwitchAggregator", "overrideState", "-1", "overridestate should still be unset")
     scenario.addExpect( "SwitchAggregator", "aggregatedState", "0", "aggregatedState should be off as nothing has turned it on")
 
@@ -72,6 +82,7 @@ def build_scenario_0(FW):
 
     return scenario
 
+
 def build_scenario_1(FW):
     """
     This scenario tests if a switchcraft induced override with value zero
@@ -82,19 +93,13 @@ def build_scenario_1(FW):
     when it succeeded, and a string describing what went wrong else.
     """
 
-    def setup_scenario_1():
-        common_setup()
+    def setup_scenario():
         sendBehaviour(0, buildTwilight          ( 9, 15, 80))
         sendBehaviour(1, buildSwitchBehaviour   (12, 15, 70))
 
     scenario = TestScenario(FW, "scenario 1")
-    scenario.addEvent(setup_scenario_1)
-
-    # before any behaviour kicks in
-    # scenario.setTime(8, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been cleared before running scenario")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no override or behaviour active")
+    add_common_setup(scenario)
+    scenario.addEvent(setup_scenario)
 
     # twilight becomes active
     scenario.setTime(9, 0)
@@ -140,20 +145,14 @@ def build_scenario_2(FW):
     """
 
     def setup_scenario_2():
-        common_setup()
         sendBehaviour(0, buildTwilight          ( 9, 16, 80))
         sendBehaviour(1, buildSwitchBehaviour   (11, 14, 70))
         sendBehaviour(2, buildSwitchBehaviour   (13, 14, 30))
         sendBehaviour(3, buildSwitchBehaviour   (15, 16, 50))
 
     scenario = TestScenario(FW, "scenario 2")
+    add_common_setup(scenario)
     scenario.addEvent(setup_scenario_2)
-
-    # before any behaviour kicks in
-    # scenario.setTime(8, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been cleared before running scenario")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no override or behaviour active")
 
     # behaviour 0, twilight, becomes active, nothing happens.
     scenario.setTime(9, 0)
@@ -206,17 +205,12 @@ def build_scenario_3(FW):
     """
 
     def setup_scenario_3():
-        common_setup()
         sendBehaviour(0,        buildTwilight(9, 14, 80))
         sendBehaviour(1, buildSwitchBehaviour(9, 12, 70))
 
     scenario = TestScenario(FW, "scenario 3")
+    add_common_setup(scenario)
     scenario.addEvent(setup_scenario_3)
-
-    # scenario.setTime(8, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
 
     # behaviours both become active
     scenario.setTime(9, 0)
@@ -248,17 +242,12 @@ def build_scenario_4(FW):
     """
 
     def setup_scenario():
-        common_setup()
         sendBehaviour(0,        buildTwilight(9, 12, 70))
         sendBehaviour(1, buildSwitchBehaviour(10, 11, 80))
 
     scenario = TestScenario(FW, "scenario 4")
+    add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
-
-    # scenario.setTime(9, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
 
     scenario.setTime(10, 0)
     scenario.addEvent(bind(sendSwitchCommand, 50))
@@ -288,12 +277,8 @@ def build_scenario_5(FW):
         sendBehaviour(1, buildSwitchBehaviour(9, 13, 100))
 
     scenario = TestScenario(FW, "scenario 5")
+    add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
-
-    # scenario.setTime(8, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
 
     # switch behaviour becomes active
     scenario.setTime(9, 0)
@@ -339,12 +324,8 @@ def build_scenario_7(FW):
         sendBehaviour(0, buildSwitchBehaviour(9, 12, 80))
 
     scenario = TestScenario(FW, "scenario 7")
+    add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
-
-    # scenario.setTime(8, 0)
-    scenario.clearTime()  # check initial setup
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 when no behaviours are active, nor override exists")
 
     # switch behaviour becomes active
     scenario.setTime(9, 0)

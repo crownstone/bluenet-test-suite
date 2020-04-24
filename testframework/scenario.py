@@ -19,7 +19,7 @@ class TestScenario:
         self.currenttime = None
 
     def setTime(self, hours, minutes, days=None):
-        self.currenttime = getTime_uint32(minutes, hours, days)
+        self.currenttime = getTime_uint32(hours, minutes, days)
 
     def addTimeAndEvent(self, event_time, event_func):
         self.eventlist += [[event_time, event_func]]
@@ -27,9 +27,14 @@ class TestScenario:
     def addEvent(self, event_func):
         self.addTimeAndEvent(self.currenttime, event_func)
 
-    def addExpect(self, classname, variablename, expectedvalue, errormessage=""):
+    def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
         self.addEvent(
-            bind(expect, self.fw, classname, variablename, expectedvalue, errormessage)
+            bind(expect, self.fw, classname, variablename, expectedvalue, errormessage, verbose)
+        )
+
+    def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=False):
+        self.addEvent(
+            bind(expectAny, self.fw, classname, variablename, expectedvalues, errormessage, verbose)
         )
 
     def run(self):

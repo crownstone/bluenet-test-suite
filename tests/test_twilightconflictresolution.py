@@ -94,7 +94,7 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
         # add a day so that testtime != 0, which is refused by the firmware.
         testtime = testcase.ex_time(i) + 24*3600
         setTime_uint32(testtime)
-        
+
         # sometimes when i == 0, the interval will be empty.
         # in that case the expected values e[0] and e[1] should be equal anyway so
         # it shouldn't make a difference if the sleep(1) will cross interval boundary.

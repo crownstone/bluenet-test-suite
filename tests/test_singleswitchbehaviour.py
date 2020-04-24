@@ -167,7 +167,7 @@ def build_scenario_2(FW):
 
     # behaviour 1, switch, becomes active, it has lower intensity so gets used for the agregated state
     scenario.setTime(11, 0)
-    scenario.addExpect("SwitchAggregator", "overrideState", "ff", "overridestate should've been cleared until all switching behaviours become inactive")
+    scenario.addExpect("SwitchAggregator", "overrideState", "255", "overridestate should've been cleared until all switching behaviours become inactive")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "70", "aggregatedState should be equal to the minimum of behaviour state and twilight state")
 
     # switchcraft occurs

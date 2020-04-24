@@ -4,21 +4,23 @@ Just a bunch of common methods
 
 import time
 
-from BluenetLib.lib.packets.behaviour.Behaviour import *
+from BluenetLib.lib.packets.behaviour.SwitchBehaviour import SwitchBehaviour
+from BluenetLib.lib.packets.behaviour.TwilightBehaviour import TwilightBehaviour
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 from firmwarecontrol.datatransport import *
 
 
 def buildSwitchBehaviour(from_hours, to_hours, intensity):
-    switchbehaviour = Behaviour()
+    switchbehaviour = SwitchBehaviour()
     switchbehaviour.setTimeFrom(from_hours % 24, 0)
     switchbehaviour.setTimeTo(to_hours % 24, 0)
     switchbehaviour.setDimPercentage(intensity)
+    switchbehaviour.setPresenceIgnore()
     return switchbehaviour
 
 
 def buildTwilight(from_hours, to_hours, intensity):
-    twilight = Twilight()
+    twilight = TwilightBehaviour()
     twilight.setTimeFrom(from_hours % 24, 0)
     twilight.setTimeTo(to_hours % 24, 0)
     twilight.setDimPercentage(intensity)
@@ -53,7 +55,8 @@ def setTime_hmd(hours, minutes, day=None):
 
 
 def sendBehaviour(index, behaviour):
-    print("send behaviour: ", [index] + behaviour.getPacket())
+    print("send behaviour: ", behaviour)
+    print("packet: ", [index] + behaviour.getPacket())
     sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.getPacket())
     sleepAfterUartCommand()
 

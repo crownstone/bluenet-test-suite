@@ -97,7 +97,6 @@ class FirmwareState:
         prettyprinter = pprint.PrettyPrinter(indent=4)
         prettyprint = prettyprinter.pprint
         prettyprint(self.statedict)
-        prettyprint(self.historylist)
 
     def getValue(self, classname, expressionname):
         for ptr, obj in self.statedict.items():

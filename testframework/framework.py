@@ -54,12 +54,13 @@ class TestFramework:
         in the logs as well as final output.
         """
         failureid = uuid.uuid4()
-        print("Failure({0}) reported".format(failureid))
 
         failstr = "{0}Result: Failure ({2}){1}".format(Style.BRIGHT + Fore.RED, Style.RESET_ALL, failureid)
 
         if cause:
             failstr += ": " + cause
+
+        print (failstr)
         return failstr
 
     def test_run(self):

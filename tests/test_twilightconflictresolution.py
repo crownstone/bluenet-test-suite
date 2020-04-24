@@ -88,22 +88,22 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
     sendBehaviour(0, testcase.t0)
     sendBehaviour(1, testcase.t1)
 
-    # print("reset firmwarestate recorder")
-
     for i in range(3):
         FW.clear()
-        testtime = testcase.ex_time(i)
+
+        # add a day so that testtime != 0, which is refused by the firmware.
+        testtime = testcase.ex_time(i) + 24*3600
         setTime_uint32(testtime)
+        
         # sometimes when i == 0, the interval will be empty.
         # in that case the expected values e[0] and e[1] should be equal anyway so
         # it shouldn't make a difference if the sleep(1) will cross interval boundary.
         # we need the second however because I'm not sure if switchAggregator will
         # immediately recompute state upon a setTime event.
-        time.sleep(1.5)
+        time.sleep(2)
 
-        # return expect(...) or TestFramework.success()
         result = expect(FW, "TwilightHandler", "currentIntendedState", testcase.e[i],
-                      "failed: ({0},{1}). At time: {2}:{3}".format(i, str(testcase), testtime // 3600,
+                      "({0},{1}). At time: {2}:{3}".format(i, str(testcase), testtime // 3600,
                                                                    (testtime % 3600) // 60),
                       True)
         if result:

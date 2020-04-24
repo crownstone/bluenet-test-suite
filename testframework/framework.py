@@ -66,4 +66,8 @@ class TestFramework:
         """
         Runs the testfunction which this instance was constructed with and returns its result.
         """
-        return self.test_impl(self.firmwarestate)
+        t1 = time.time()
+        result = self.test_impl(self.firmwarestate)
+        t2 = time.time()
+        print("Framework test_run time: ", t2-t1)
+        return result

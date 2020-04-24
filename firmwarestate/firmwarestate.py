@@ -99,6 +99,21 @@ class FirmwareState:
         prettyprint(self.statedict)
         prettyprint(self.historylist)
 
+    def getValue(self, classname, expressionname):
+        for ptr, obj in self.statedict.items():
+            if obj.get('typename') == classname:
+                return obj.get(expressionname)
+        return None
+
+    def getValues(self, classname, expressionname):
+        result = []
+        for ptr, obj in self.statedict.items():
+            if obj.get('typename') == classname:
+                value = obj.get(expressionname)
+                if value is not None:
+                    result += [value]
+        return result
+
     def assertFindFailuresMulti(self, classname, expressionname, values):
         """
         Checks if for all objects of type [classname] the entry for [expressionname] a value in [values].

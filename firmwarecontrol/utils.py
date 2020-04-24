@@ -30,6 +30,9 @@ def buildTwilight(from_hours, to_hours, intensity):
 def sleepAfterUartCommand():
     time.sleep(0.5)
 
+def sendBehaviour(index, behaviour):
+    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.getPacket())
+    sleepAfterUartCommand()
 
 def fullReset():
     print("Resetting crownstone and waiting for dimmer to have started for a cleaner test.")
@@ -52,14 +55,6 @@ def setTime_hmd(hours, minutes, day=None):
     setTime(getTime_uint32(hours,
                            minutes,
                            day if day else 0))
-
-
-def sendBehaviour(index, behaviour):
-    print("send behaviour: ", behaviour)
-    print("packet: ", [index] + behaviour.getPacket())
-    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.getPacket())
-    sleepAfterUartCommand()
-
 
 def setAllowDimming(value):
     sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1])

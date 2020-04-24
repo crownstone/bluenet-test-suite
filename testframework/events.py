@@ -30,11 +30,7 @@ def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=
 
         return failmsg
 
-    actualvalue = None
-    try:
-        actualvalue = FW.statedict[failures[0]].get(variablename)
-    except:
-        actualvalue = "<not found>"
+    actualvalue = FW.getValue(classname,variablename) or "<not found>"
 
     if failures:
         failmsg = TestFramework.failure("{4}: Expected {0}.{1} to have value {2}, got {3}".format(
@@ -47,6 +43,7 @@ def expect(FW, classname, variablename, expectedvalue, errormessage="", verbose=
     if verbose:
         print("expectation correct: {0}.{1} == {2} ({3})".format(
             classname, variablename, actualvalue, errormessage))
+        FW.print()
 
     return None
 
@@ -66,11 +63,7 @@ def expectAny(FW, classname, variablename, expectedvalues, errormessage="", verb
 
         return failmsg
 
-    actualvalue = None
-    try:
-        actualvalue = FW.statedict[failures[0]].get(variablename)
-    except:
-        actualvalue = "<not found>"
+    actualvalue = FW.getValue(classname, variablename) or "<not found>"
 
     if failures:
         failmsg = TestFramework.failure("{4}: Expected {0}.{1} to have value in [{2}], got {3}".format(

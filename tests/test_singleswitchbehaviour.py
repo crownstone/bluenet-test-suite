@@ -7,8 +7,9 @@ from testframework.scenario import *
 
 
 def common_setup():
-    sendClearSwitchAggregatorOverrideAndAggregatedState()
     sendClearBehaviourStoreEvent()
+    sendSwitchAggregatorReset()
+
     time.sleep(1)
 
 def add_common_setup(scenario):

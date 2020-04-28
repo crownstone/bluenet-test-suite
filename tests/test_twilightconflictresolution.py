@@ -34,6 +34,10 @@ class test_case:
         __class__.TestCaseCounter += 1
 
     def ex_time(self, index):
+        """
+        Computes the times at which the expectations are to be checked from the the
+        from/until values of the twilights, ensuring proper midnight rollover.
+        """
         f0 = self.t0.fromTime.offset
         f1 = self.t1.fromTime.offset
         u0 = self.t0.untilTime.offset
@@ -134,19 +138,9 @@ def test_twilightconflictresolution(FW):
         # last case ex_time[2] will
         # falls at 02:00+offset.
 
-    print("Resetting crownstone and waiting for dimmer to have started for a cleaner test.")
-    sendCommandToCrownstone(ControlType.RESET, [])
-    for t in reversed(range(7)):
-        print("sleeping for {0} more seconds".format((t + 1) * 10))
-        time.sleep(10)
-
-    # print("set dimming allowed true.")
-    sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1])
-    time.sleep(0.5)
-
-    # set override state to translucent so that twilight value should be used.
-    sendCommandToCrownstone(ControlType.SWITCH, [0xff])
-    time.sleep(0.5)
+    fullReset()
+    setAllowDimming(True)
+    sendSwitchCommand(0xff) # set override state to translucent so that twilight value should be used.
 
     result = []
     for case in cases:

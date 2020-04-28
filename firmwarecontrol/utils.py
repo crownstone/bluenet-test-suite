@@ -8,6 +8,7 @@ from BluenetLib.lib.packets.behaviour.SwitchBehaviour import SwitchBehaviour
 from BluenetLib.lib.packets.behaviour.TwilightBehaviour import TwilightBehaviour
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 from firmwarecontrol.datatransport import *
+from firmwarecontrol.InternalEventCodes import EventType
 
 
 def buildSwitchBehaviour(from_hours, to_hours, intensity):
@@ -52,12 +53,12 @@ def setTime_uint32(time_as_uint32):
     sleepAfterUartCommand()
 
 def setTime_hmd(hours, minutes, day=None):
-    setTime(getTime_uint32(hours,
+    setTime_uint32(getTime_uint32(hours,
                            minutes,
                            day if day else 0))
 
 def setAllowDimming(value):
-    sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1])
+    sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1 if value else 0])
     sleepAfterUartCommand()
 
 
@@ -77,6 +78,9 @@ def sendClearSwitchAggregatorAggregatedState():
 def sendClearSwitchAggregatorOverrideAndAggregatedState():
         sendSwitchCommand(0xfc)
         sleepAfterUartCommand()
+
+def sendSwitchAggregatorReset():
+    sendEventToCrownstone(EventType.CMD_SWITCH_AGGREGATOR_RESET, [])
 
 def sendSwitchCraftEvent():
     sendEventToCrownstone(0x100 + 20 + 2, [])

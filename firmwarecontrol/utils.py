@@ -45,7 +45,10 @@ def fullReset():
 def getTime_uint32(hours, minutes, day=None):
     # day != 0  && (hours != 0 || minutes != 0): sunday
     # epoch is on a thursday, so we add 3*24*60*60 seconds
-    return (3 + day if day else 0) * 24 * 60 * 60 + hours * 60 * 60 + minutes * 60
+    dayoffset = 0
+    if day is not None:
+        dayoffset = (3 + day)
+    return dayoffset * 24*60*60 + hours * 60*60 + minutes * 60
 
 def setTime_uint32(time_as_uint32):
     sendCommandToCrownstone(ControlType.SET_TIME,

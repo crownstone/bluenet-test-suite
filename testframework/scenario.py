@@ -18,7 +18,8 @@ class TestScenario:
     def clearTime(self):
         self.currenttime = None
 
-    def setTime(self, hours, minutes, days=None):
+    def setTime(self, hours, minutes, days=0):
+        # days is set to 0 to prevent mishaps due to settime(0) being refused by the firmware.
         self.currenttime = getTime_uint32(hours, minutes, days)
 
     def addTimeAndEvent(self, event_time, event_func):
@@ -55,6 +56,7 @@ class TestScenario:
             if t is not None:
                 if t != previous_t and t >= 0:
                     setTime_uint32(t)
+                    print("setTime called: {0}.".format(t))
 
             response = evt()
 

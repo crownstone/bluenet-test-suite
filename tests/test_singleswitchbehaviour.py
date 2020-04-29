@@ -8,9 +8,9 @@ from testframework.scenario import *
 
 def common_setup():
     sendClearBehaviourStoreEvent()
-    sendSwitchAggregatorReset()
+    time.sleep(1) # clearing the store takes a bit more time maybe
 
-    time.sleep(1)
+    sendSwitchAggregatorReset()
 
 def add_common_setup(scenario):
     scenario.clearTime()

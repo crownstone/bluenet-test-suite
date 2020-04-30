@@ -121,11 +121,12 @@ def build_scenario_1(FW):
     scenario.setTime(11, 0)
     scenario.addEvent(sendSwitchCraftEvent)
 
+    # override state will be set to 0.
     scenario.setTime(11, 1)
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should be cleared after last switchcraft")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be equal to twilight value when no active switchbehaviours")
+    scenario.addExpect("SwitchAggregator", "overrideState", "0", "overridestate should be cleared after last switchcraft")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be 0 after last swithcraft")
 
-    # switch behaviour becomes active
+    # switch behaviour becomes active, this should throw away the override state.
     scenario.setTime(12, 0)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should be cleared after last switchcraft")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "70", "aggregatedState should be equal to switchbehaviour value when active twilights don't have lower values")
@@ -182,6 +183,11 @@ def build_scenario_2(FW):
     # behaviour 2, switch, becomes active, it has lower intensity so gets used for the agregated state
     scenario.setTime(13, 0)
     scenario.addExpect("SwitchAggregator", "overrideState", "0", "overridestate shouldn't have been changed when switch behaviour becomes active")
+    scenario.addEvent(sendSwitchCraftEvent)
+    scenario.addExpect("SwitchAggregator", "overrideState", "255", "overridestate shouldn't have been changed when switch behaviour becomes active")
+    scenario.setTime(13, 1)
+    scenario.addExpect("SwitchAggregator", "behaviourState", "30", "<< todo: write error message >>")
+    scenario.addExpect("SwitchAggregator", "twilightState", "80", "<<>> todo: write error message >>")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "30", "aggregatedState should be equal to the minimum of behaviour state and twilight state")
 
     # all behaviours become inactive, override should clear

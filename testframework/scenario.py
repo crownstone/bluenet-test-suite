@@ -62,7 +62,7 @@ class TestScenario:
 
             if response:
                 if t is not None:
-                    return "{3} at {0:0>2}:{1:0>2}h: {2} ".format(t // 3600, (t % 3600) // 60, response, self.name)
+                    return "{3} at {0:0>2}:{1:0>2}h: {2} ".format((t // 3600) % 24, (t % 3600) // 60, response, self.name)
                 else:
                     return "{1} at setup time: {0}".format(response, self.name)
 

@@ -186,8 +186,8 @@ def build_scenario_2(FW):
     scenario.addEvent(sendSwitchCraftEvent)
     scenario.addExpect("SwitchAggregator", "overrideState", "255", "overridestate shouldn't have been changed when switch behaviour becomes active")
     scenario.setTime(13, 1)
-    scenario.addExpect("SwitchAggregator", "behaviourState", "30", "<< todo: write error message >>")
-    scenario.addExpect("SwitchAggregator", "twilightState", "80", "<<>> todo: write error message >>")
+    scenario.addExpect("SwitchAggregator", "behaviourState", "30", "behaviour state value incorrectly resolved")
+    scenario.addExpect("SwitchAggregator", "twilightState", "80", "twilight state value should be set to the one of the unique twilight behaviour ")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "30", "aggregatedState should be equal to the minimum of behaviour state and twilight state")
 
     # all behaviours become inactive, override should clear
@@ -235,10 +235,8 @@ def build_scenario_3(FW):
     scenario.addExpect("SwitchAggregator", "aggregatedState", "50", "aggregatedState should be equal to override state when it is opaque")
 
     # all behaviours become inactive
-    scenario.setTime(11, 0)
+    scenario.setTime(12, 0)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been cleared when it is non-zero and all switch behaviours become inactive")
-
-    scenario.setTime(11, 0)
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should be equal to 0 when no override state or switch behaviours are active")
 
     return scenario

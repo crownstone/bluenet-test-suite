@@ -354,7 +354,7 @@ def build_scenario_7(FW):
     scenario.setTime(11, 0)
     scenario.addEvent(sendSwitchCraftEvent)
     scenario.addExpect("SwitchAggregator", "overrideState", "255", "overridestate should have been set to translucent when toggling switchcraft in off state")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "70", "aggregatedState should be resolved to switchbehaviour value as override is translucent")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "80", "aggregatedState should be resolved to switchbehaviour value as override is translucent")
 
     # behaviours become inactive
     scenario.setTime(12, 0)

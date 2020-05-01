@@ -282,7 +282,6 @@ def build_scenario_5(FW):
     """
 
     def setup_scenario():
-        common_setup()
         sendBehaviour(0,        buildTwilight(9, 13, 70))
         sendBehaviour(1, buildSwitchBehaviour(9, 13, 100))
 
@@ -293,8 +292,9 @@ def build_scenario_5(FW):
     # switch behaviour becomes active
     scenario.setTime(9, 0)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "70",
-                       "aggregatedState should be set to twilight value (70) because a switch behaviour(100) is active")
+    scenario.addExpect("SwitchAggregator", "twilightState", "70", "twilight state value incorrect")
+    scenario.addExpect("SwitchAggregator", "behaviourState", "100", "behaviour state value incorrect")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "70", "aggregatedState should be set to twilight value because a switch behaviour is active")
 
     # switch command occurs
     scenario.setTime(10, 0)
@@ -330,7 +330,6 @@ def build_scenario_7(FW):
     """
 
     def setup_scenario():
-        common_setup()
         sendBehaviour(0, buildSwitchBehaviour(9, 12, 80))
 
     scenario = TestScenario(FW, "scenario 7")
@@ -339,8 +338,11 @@ def build_scenario_7(FW):
 
     # switch behaviour becomes active
     scenario.setTime(9, 0)
+    # scenario.wait(1)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
-    scenario.addExpect("SwitchAggregator", "aggregatedState", "80", "aggregatedState should be set to active switch behaviour value")
+    scenario.addExpect("SwitchAggregator", "behaviourState", "80", "behaviourState incorrect")
+    scenario.addExpect("SwitchAggregator", "twilightState", "100", "twilightState incorrect")
+    scenario.addExpect("SwitchAggregator", "aggregatedState", "80", "aggregatedState should be set to active switch behaviour value", True)
 
     # switchcraft occurs
     scenario.setTime(10, 0)

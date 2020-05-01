@@ -1,3 +1,5 @@
+from time import time
+
 from testframework.events import *
 from firmwarecontrol.utils import *
 
@@ -27,6 +29,13 @@ class TestScenario:
 
     def addEvent(self, event_func):
         self.addTimeAndEvent(self.currenttime, event_func)
+
+    def wait(self, seconds):
+        """
+        Adds an event that simply sleeps for seconds while running the scenario.
+        Can be used to resolve subtle timing issues during testing.
+        """
+        self.addEvent(bind(time.sleep, seconds))
 
     def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
         self.addEvent(

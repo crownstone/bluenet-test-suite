@@ -1,22 +1,13 @@
-import time
-
 from testframework.framework import *
+from testframework.events import *
+from firmwarecontrol.utils import *
 from firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
-from BluenetLib.lib.packets.behaviour.Behaviour import *
 
-
-def buildTwilight(from_hours, to_hours, intensity):
-    twilight = Twilight()
-    twilight.setTimeFrom(from_hours % 24, 0)
-    twilight.setTimeTo(to_hours % 24, 0)
-    twilight.setDimPercentage(intensity)
-    return twilight
-
-
-def sendTwilight(index, twilight):
-    packet = twilight.getPacket()
-    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + twilight.getPacket())
+"""
+Note: this test was written before scenario and event classes were defined, it could use a
+thorough refactor.
+"""
 
 
 class test_case:
@@ -43,6 +34,10 @@ class test_case:
         __class__.TestCaseCounter += 1
 
     def ex_time(self, index):
+        """
+        Computes the times at which the expectations are to be checked from the the
+        from/until values of the twilights, ensuring proper midnight rollover.
+        """
         f0 = self.t0.fromTime.offset
         f1 = self.t1.fromTime.offset
         u0 = self.t0.untilTime.offset
@@ -50,28 +45,28 @@ class test_case:
 
         # lift the intervals from Z/(24*3600)Z to the natural number line
         if u0 < f0:
-            u0 += 24*3600
+            u0 += 24 * 3600
 
         if u1 < f1:
-            u1 += 24*3600
+            u1 += 24 * 3600
 
         # check if the intervals intersect on the natural numberline, if not, add a day to the lowest interval.
-        if not max(f0,f1) <= min(u0,u1):
+        if not max(f0, f1) <= min(u0, u1):
             # intersection is empty, move up lower one.
             if f0 <= f1:
                 # can check on only one bound because knowledge of intersection
-                f0 += 24*3600
-                u0 += 24*3600
+                f0 += 24 * 3600
+                u0 += 24 * 3600
             else:
-                f1 += 24*3600
-                u1 += 24*3600
+                f1 += 24 * 3600
+                u1 += 24 * 3600
 
         times_list = sorted([f0, f1, u0, u1])
         # if it's not solved now, I've tried...
 
         # returns average of two consecutive bounds of the two intervals,
         # wrapping back to Z/(24*3600)Z
-        return int((times_list[index] + times_list[index + 1]) / 2.0) % (24*3600)
+        return int((times_list[index] + times_list[index + 1]) / 2.0) % (24 * 3600)
 
     def __str__(self):
         return "case {9}: t0=[{0}:00,{1}:00] @{2} t1=[{3}:00,{4}:00], @{5} expect [{6},{7},{8}]".format(
@@ -94,38 +89,29 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
     testcase.print()
 
     # send twilights to behaviour store
-    sendTwilight(0, testcase.t0)
-    time.sleep(0.2)
-    sendTwilight(1, testcase.t1)
-    time.sleep(0.2)
-
-    # print("reset firmwarestate recorder")
+    sendBehaviour(0, testcase.t0)
+    sendBehaviour(1, testcase.t1)
 
     for i in range(3):
         FW.clear()
-        testtime = testcase.ex_time(i)
-        sendCommandToCrownstone(ControlType.SET_TIME,
-                                Conversion.uint32_to_uint8_array(testtime))
+
+        # add a day so that testtime != 0, which is refused by the firmware.
+        testtime = testcase.ex_time(i) + 24*3600
+        setTime_uint32(testtime)
+
         # sometimes when i == 0, the interval will be empty.
         # in that case the expected values e[0] and e[1] should be equal anyway so
         # it shouldn't make a difference if the sleep(1) will cross interval boundary.
         # we need the second however because I'm not sure if switchAggregator will
         # immediately recompute state upon a setTime event.
-        time.sleep(1.5)
+        time.sleep(2)
 
-        failures = FW.assertFindFailures("TwilightHandler", 'previousIntendedState', testcase.e[i])
-        if failures:
-            actualvalue = None
-            try:
-                actualvalue = FW.statedict[failures[0]].get("previousIntendedState")
-            except:
-                actualvalue = "<not found>"
-
-            failmsg = TestFramework.failure("failed: ({0},{1}). At time: {2}:{3} expected {4} but got {5}".format(
-                i, str(testcase), testtime//3600, (testtime % 3600)//60, testcase.e[i], actualvalue))
-            testcase.print()
-            FW.print()
-            return failmsg
+        result = expect(FW, "TwilightHandler", "currentIntendedState", testcase.e[i],
+                      "({0},{1}). At time: {2}:{3}".format(i, str(testcase), (testtime // 3600) % 24,
+                                                                   (testtime % 3600) // 60),
+                      True)
+        if result:
+            return result
 
     return TestFramework.success()
 
@@ -147,23 +133,14 @@ def test_twilightconflictresolution(FW):
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 75),
                            buildTwilight(0 + hr_offset, 1 + hr_offset, 50), [50, 50, 75]),  # same starttime, decreasing
         cases += test_case(buildTwilight(0 + hr_offset, 2 + hr_offset, 75),
-                           buildTwilight(0 + hr_offset, 2 + hr_offset, 50), [50, 50, 100]),  # same starttime and endtime
-                                                                                           # last case ex_time[2] will
-                                                                                           # falls at 02:00+offset.
+                           buildTwilight(0 + hr_offset, 2 + hr_offset, 50),
+                           [50, 50, 100]),  # same starttime and endtime
+        # last case ex_time[2] will
+        # falls at 02:00+offset.
 
-    print("Resetting crownstone and waiting for dimmer to have started for a cleaner test.")
-    sendCommandToCrownstone(ControlType.RESET, [])
-    for t in reversed(range(7)):
-        print("sleeping for {0} more seconds".format((t + 1) * 10))
-        time.sleep(10)
-
-    # print("set dimming allowed true.")
-    sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1])
-    time.sleep(0.5)
-
-    # set override state to translucent so that twilight value should be used.
-    sendCommandToCrownstone(ControlType.SWITCH, [0xff])
-    time.sleep(0.5)
+    fullReset()
+    setAllowDimming(True)
+    sendSwitchCommand(0xff) # set override state to translucent so that twilight value should be used.
 
     result = []
     for case in cases:
@@ -176,7 +153,7 @@ if __name__ == "__main__":
         if frame != None:
             results = frame.test_run()
             prettyprinter = pprint.PrettyPrinter(indent=4)
-            print ("Test finished with result:")
+            print("Test finished with result:")
             for result in results:
                 print(result)
 

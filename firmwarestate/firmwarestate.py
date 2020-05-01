@@ -97,30 +97,47 @@ class FirmwareState:
         prettyprinter = pprint.PrettyPrinter(indent=4)
         prettyprint = prettyprinter.pprint
         prettyprint(self.statedict)
-        prettyprint(self.historylist)
 
-    def assertFindFailures(self, classname, expressionname, value):
+    def getValue(self, classname, expressionname):
+        for ptr, obj in self.statedict.items():
+            if obj.get('typename') == classname:
+                return obj.get(expressionname)
+        return None
+
+    def getValues(self, classname, expressionname):
+        result = []
+        for ptr, obj in self.statedict.items():
+            if obj.get('typename') == classname:
+                value = obj.get(expressionname)
+                if value is not None:
+                    result += [value]
+        return result
+
+    def assertFindFailuresMulti(self, classname, expressionname, values):
         """
-        Checks if for all objects of type [classname] the entry for [expressionname] has given [value].
+        Checks if for all objects of type [classname] the entry for [expressionname] a value in [values].
 
         Returns a list of pointers (keys in the statedict) to objects that fail this test, including:
             - those entries which do not contain given variablename
-            - those entries which dissatisfy equality.
+            - those entries which dissatisfy containment test.
         Returns None if no objects of given classname where found.
 
         Note: value will be stringified.
         """
         failures = []
+        strvalues = [str(value) for value in values]
         existsAny = False
         for ptr, obj in self.statedict.items():
             if obj.get('typename') == classname:
                 existsAny = True
-                if obj.get(expressionname) != str(value):
+                if obj.get(expressionname) not in strvalues:
                     failures += [ptr]
         if existsAny:
             return failures
         return None
 
+    def assertFindFailures(self, classname, expressionname, value):
+        return self.assertFindFailuresMulti(classname, expressionname, [value])
 
 def initializeUSB(bluenet_instance, portname, a_range):
     """
@@ -129,7 +146,7 @@ def initializeUSB(bluenet_instance, portname, a_range):
     """
     for i in a_range:
         try:
-            port = "/dev/{0}{1}".format(portname,i)
+            port = "/dev/{0}{1}".format(portname, i)
             bluenet_instance.initializeUSB(port)
             return port
         except Exception as err:
@@ -181,6 +198,8 @@ class Main:
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
                         self.fwState.print()
+                    if event.key == ord('q')  or event.key == ord('Q') or event.key == pygame.K_ESCAPE:
+                        run = False
 
 if __name__ == "__main__":
     with Main() as m:

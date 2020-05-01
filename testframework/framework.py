@@ -43,8 +43,8 @@ class TestFramework:
         self.bluenet.stop()
 
     @classmethod
-    def success(cls):
-        return "{0}Result: Success{1}".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL)
+    def success(cls, note=""):
+        return "{0}Result: Success{1} ({2})".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL, note)
 
     @classmethod
     def failure(cls, cause=""):
@@ -54,16 +54,21 @@ class TestFramework:
         in the logs as well as final output.
         """
         failureid = uuid.uuid4()
-        print("Failure({0}) reported".format(failureid))
 
         failstr = "{0}Result: Failure ({2}){1}".format(Style.BRIGHT + Fore.RED, Style.RESET_ALL, failureid)
 
         if cause:
             failstr += ": " + cause
+
+        print (failstr)
         return failstr
 
     def test_run(self):
         """
         Runs the testfunction which this instance was constructed with and returns its result.
         """
-        return self.test_impl(self.firmwarestate)
+        t1 = time.time()
+        result = self.test_impl(self.firmwarestate)
+        t2 = time.time()
+        print("Framework test_run time: ", t2-t1)
+        return result

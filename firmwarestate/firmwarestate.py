@@ -4,6 +4,8 @@ from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
 from BluenetLib.lib.core.uart.UartTypes import UartRxType
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
 
+from firmwarestatehistoryentry import FirmwareStateHistoryEntry
+
 import datetime
 import pprint
 
@@ -86,7 +88,8 @@ class FirmwareState:
         """
         Adds a record to the historylist.
         """
-        self.historylist += [[datetime.datetime.now(), ptr, classname, valuename, value]]
+        self.historylist += [FirmwareStateHistoryEntry(
+            datetime.datetime.now(), ptr, classname, valuename, value)]
 
     def printhistory(self):
         prettyprinter = pprint.PrettyPrinter(indent=4)
@@ -198,6 +201,8 @@ class Main:
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
                         self.fwState.print()
+                    if event.key == ord('h'):
+                        self.fwState.printhistory()
                     if event.key == ord('q')  or event.key == ord('Q') or event.key == pygame.K_ESCAPE:
                         run = False
 

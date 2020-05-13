@@ -124,25 +124,21 @@ class Main:
 
             plotwindow_width = datetime.timedelta(seconds=60)
             time_minimum = datetime.datetime.now() - plotwindow_width
-            print("animate called")
             for series_ij, series_time_and_rssi in self.rssiDataTracker.rssitimeseries.items():
-
-
                 series_time = series_time_and_rssi[0]
                 series_rssi = series_time_and_rssi[1]
 
-                # print("plotting : {0}, containing {1} datapoints".format(series_ij, len(series_time)))
-
                 # trim the series
-                series_time = [(t-plotwindow_width).timestamp() for t in series_time if t >= time_minimum]
+                series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
                 series_rssi = series_rssi[-len(series_time) : ]
 
-                # print("rssis ({0}): {1}".format(len(series_rssi), series_rssi))
+                ax1.plot(series_time, series_rssi, label=",".join(series_ij))
+                ax1.set_ylabel("rssi(dB)")
+                ax1.set_xlabel("time(s)")
+                # ax1.legend()
+            plt.legend()
 
-                ax1.plot(series_time, series_rssi)
-                break
-
-        ani = animation.FuncAnimation(fig, animate, interval=1000)
+        ani = animation.FuncAnimation(fig, animate, interval=250)
         plt.show()
 
         while True:

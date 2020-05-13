@@ -4,17 +4,25 @@ to the FirmwareState tracker.
 """
 from statistics import mean
 import time
+import datetime
 
 from BluenetLib import Bluenet
 from firmwarecontrol.datatransport import initializeUSB
 from firmwarestate import FirmwareState
 
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 class RssiDataTracker:
     def __init__(self, FW):
         self.fw = FW
         self.activeCrownstoneIds = set()
         self.fw.onNewEntryParsed += [lambda e: self.record(e)]
+
+        # keys: frozenset pairs (i,j) (solves all reordering issues)
+        # values: pair of lists, containing matching coordinates for
+        # the rssi/time data stream
+        self.rssitimeseries = dict()
 
     def record(self, e):
         """
@@ -27,14 +35,16 @@ class RssiDataTracker:
         if expr[0] != "rssi" or len(expr) != 3:
             return
 
-        i = expr[1]
-        j = expr[2]
-        rssi = e.value
+        i_j = frozenset({expr[1], expr[2]})
+        rssi = float(e.value)
 
-        self.activeCrownstoneIds |= {i, j}
+        self.activeCrownstoneIds |= i_j
 
-        print("recorded rssi: {0}, {1} {2}".format(i, j, rssi))
+        if i_j not in self.rssitimeseries:
+            self.rssitimeseries[i_j] = [[], []]
 
+        self.rssitimeseries[i_j][0] += [e.time]
+        self.rssitimeseries[i_j][1] += [rssi]
 
     def getLastN(self, i, j, n=1):
         """
@@ -106,6 +116,35 @@ class Main:
         self.bluenet.stop()
 
     def run(self):
+        fig = plt.figure()
+        ax1 = fig.add_subplot(1, 1, 1)
+
+        def animate(i):
+            ax1.clear()
+
+            plotwindow_width = datetime.timedelta(seconds=60)
+            time_minimum = datetime.datetime.now() - plotwindow_width
+            print("animate called")
+            for series_ij, series_time_and_rssi in self.rssiDataTracker.rssitimeseries.items():
+
+
+                series_time = series_time_and_rssi[0]
+                series_rssi = series_time_and_rssi[1]
+
+                # print("plotting : {0}, containing {1} datapoints".format(series_ij, len(series_time)))
+
+                # trim the series
+                series_time = [(t-plotwindow_width).timestamp() for t in series_time if t >= time_minimum]
+                series_rssi = series_rssi[-len(series_time) : ]
+
+                # print("rssis ({0}): {1}".format(len(series_rssi), series_rssi))
+
+                ax1.plot(series_time, series_rssi)
+                break
+
+        ani = animation.FuncAnimation(fig, animate, interval=1000)
+        plt.show()
+
         while True:
             time.sleep(0.5)
 

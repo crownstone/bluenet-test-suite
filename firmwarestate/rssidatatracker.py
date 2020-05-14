@@ -32,19 +32,27 @@ class RssiDataTracker:
             return
 
         expr = e.valuename.split("_")
-        if expr[0] != "rssi" or len(expr) != 3:
+        if expr[0] != "rssi" or len(expr) != 4:
             return
 
-        i_j = frozenset({expr[1], expr[2]})
+        sender = expr[1]
+        recipient = expr[2]
+        channel = int(expr[3])
         rssi = float(e.value)
+
+        i_j = frozenset({sender, recipient})
 
         self.activeCrownstoneIds |= i_j
 
         if i_j not in self.rssitimeseries:
-            self.rssitimeseries[i_j] = [[], []]
+            # add a first dict mapping the current channel to two empty series
+            self.rssitimeseries[i_j] = {channel: {"rssi":[], "time":[]}}
+        if channel not in self.rssitimeseries[i_j]:
+            # add extra dict for new channels
+            self.rssitimeseries[i_j][channel] = {"rssi": [], "time": []}
 
-        self.rssitimeseries[i_j][0] += [e.time]
-        self.rssitimeseries[i_j][1] += [rssi]
+        self.rssitimeseries[i_j][channel]["time"] += [e.time]
+        self.rssitimeseries[i_j][channel]["rssi"] += [rssi]
 
     def getLastN(self, i, j, n=1):
         """
@@ -128,21 +136,28 @@ class Main:
 
         def animate(i):
             ax1.clear()
+            ax1.set_ylabel("rssi(dB)")
+            ax1.set_xlabel("time(s)")
 
             plotwindow_width = datetime.timedelta(seconds=60)
             time_minimum = datetime.datetime.now() - plotwindow_width
-            for series_ij, series_time_and_rssi in self.rssiDataTracker.rssitimeseries.items():
-                series_time = series_time_and_rssi[0]
-                series_rssi = series_time_and_rssi[1]
+            num_samples_for_median_filter = 1
 
-                # trim the series
-                series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
-                series_rssi = self.medianFilter(series_rssi[-len(series_time) : ], 5)
+            for series_ij, channel_to_series_time_and_rssi in self.rssiDataTracker.rssitimeseries.items():
+                # label = ",".join(series_ij) # label subplot with the pair id.
+                for channel, time_rssi_series_dict in channel_to_series_time_and_rssi.items():
+                    series_time = time_rssi_series_dict["time"]
+                    series_rssi = time_rssi_series_dict["rssi"]
 
-                ax1.plot(series_time, series_rssi, label=",".join(series_ij))
-                ax1.set_ylabel("rssi(dB)")
-                ax1.set_xlabel("time(s)")
+                    # trim the series to fit the time window
+                    series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
+                    series_rssi = self.medianFilter(series_rssi[-len(series_time) : ], num_samples_for_median_filter)
+
+                    ax1.plot(series_time, series_rssi,
+                             marker='o', markersize=3,
+                             label="{0} @{1}".format("->".join(series_ij), channel))
                 ax1.legend()
+                break # doing one pair of crownstones for the plot first
 
         ani = animation.FuncAnimation(fig, animate, interval=250)
         plt.show()

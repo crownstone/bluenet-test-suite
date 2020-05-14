@@ -3,6 +3,7 @@ This is a utility wrapper for the firmware RssiDataTracker class, which pushes i
 to the FirmwareState tracker.
 """
 from statistics import mean, median
+from itertools import combinations, chain
 import time
 import datetime
 
@@ -131,20 +132,37 @@ class Main:
         ]
 
     def run(self):
-        fig = plt.figure()
-        ax1 = fig.add_subplot(1, 1, 1)
+        fig, axs = plt.subplots(2, 3, sharex=True)
+        axs_flat = list(chain.from_iterable(axs)) # for practical reasons have a flattened version of the axs
+
+        # general plotting parameters
+        num_samples_for_median_filter = 1
+        plotwindow_width = datetime.timedelta(seconds=60)
+        time_minimum = datetime.datetime.now() - plotwindow_width
 
         def animate(i):
-            ax1.clear()
-            ax1.set_ylabel("rssi(dB)")
-            ax1.set_xlabel("time(s)")
+            # build a mapping from the lowest crownstone ids pair to an ax of the figure
+            ax_index = 0
+            axs_dict = dict()
+            for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
+                axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
+                ax_index += 1
+                if ax_index >= len(axs_flat):
+                    break
 
-            plotwindow_width = datetime.timedelta(seconds=60)
-            time_minimum = datetime.datetime.now() - plotwindow_width
-            num_samples_for_median_filter = 1
-
+            # loop over the available data per crownstone pair
             for series_ij, channel_to_series_time_and_rssi in self.rssiDataTracker.rssitimeseries.items():
-                # label = ",".join(series_ij) # label subplot with the pair id.
+                if series_ij not in axs_dict:
+                    # can't plot if there is no axis for it. (will happen for the 5th crownstone)
+                    break
+
+                # label subplot with the pair id.
+                ax = axs_dict[series_ij]
+                ax.clear()
+                ax.set_xlabel("time(s)")
+                ax.set_ylabel("rssi(dB)" + "->".join(series_ij))
+
+                # loop over all channels on this pair of crownstones and plot each as a separate line.
                 for channel, time_rssi_series_dict in channel_to_series_time_and_rssi.items():
                     series_time = time_rssi_series_dict["time"]
                     series_rssi = time_rssi_series_dict["rssi"]
@@ -153,11 +171,11 @@ class Main:
                     series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
                     series_rssi = self.medianFilter(series_rssi[-len(series_time) : ], num_samples_for_median_filter)
 
-                    ax1.plot(series_time, series_rssi,
+                    ax.plot(series_time, series_rssi,
                              marker='o', markersize=3,
-                             label="{0} @{1}".format("->".join(series_ij), channel))
-                ax1.legend()
-                break # doing one pair of crownstones for the plot first
+                             label="ch: {0}".format(channel))
+
+                # ax.legend()
 
         ani = animation.FuncAnimation(fig, animate, interval=250)
         plt.show()

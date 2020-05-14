@@ -2,7 +2,7 @@
 This is a utility wrapper for the firmware RssiDataTracker class, which pushes its information
 to the FirmwareState tracker.
 """
-from statistics import mean
+from statistics import mean, median
 import time
 import datetime
 
@@ -115,6 +115,13 @@ class Main:
     def __exit__(self, type, value, traceback):
         self.bluenet.stop()
 
+    def medianFilter(self, list_of_floats, samples_per_median):
+        l = list_of_floats
+        M = len(l)
+        return [
+            median(l[max(k-samples_per_median, 0): k] or [l[0]]) for k in range(M)
+        ]
+
     def run(self):
         fig = plt.figure()
         ax1 = fig.add_subplot(1, 1, 1)
@@ -130,13 +137,12 @@ class Main:
 
                 # trim the series
                 series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
-                series_rssi = series_rssi[-len(series_time) : ]
+                series_rssi = self.medianFilter(series_rssi[-len(series_time) : ], 5)
 
                 ax1.plot(series_time, series_rssi, label=",".join(series_ij))
                 ax1.set_ylabel("rssi(dB)")
                 ax1.set_xlabel("time(s)")
-                # ax1.legend()
-            plt.legend()
+                ax1.legend()
 
         ani = animation.FuncAnimation(fig, animate, interval=250)
         plt.show()

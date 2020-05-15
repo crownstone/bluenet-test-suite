@@ -39,9 +39,9 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
-        comment = "when switchcraft happens in dumb mode it should always result in intensity 100"
+        comment = "when switchcraft happens in dumb mode it should always result in translucent override aggregated to 100"
         scenario.addEvent(sendSwitchCraftEvent)
-        scenario.addExpect("SwitchAggregator", "overrideState", "100", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
         scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "100", comment)
@@ -79,6 +79,7 @@ def buildSmartScenario(FW):
 
     # nothing is active yet
     scenario.setTime(8, 0)
+    scenario.wait(1)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should've been equal to twilight value")
 

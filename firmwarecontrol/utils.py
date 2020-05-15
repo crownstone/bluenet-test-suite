@@ -87,7 +87,7 @@ def sendSwitchAggregatorReset():
     sendEventToCrownstone(EventType.CMD_SWITCH_AGGREGATOR_RESET, [])
 
 def sendSwitchCraftEvent():
-    sendEventToCrownstone(0x100 + 20 + 2, [])
+    sendEventToCrownstone(EventType.CMD_SWITCH_TOGGLE, [])
     sleepAfterUartCommand()
 
 

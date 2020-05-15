@@ -72,14 +72,17 @@ def sendSwitchCommand(intensity):
 
 
 def sendClearSwitchAggregatorOverrideState():
+    # this is getting fragile: if home is dumb it won't react.
     sendSwitchCommand(0xfe)
     sleepAfterUartCommand()
 
 def sendClearSwitchAggregatorAggregatedState():
+    # this is getting fragile: if home is dumb it won't react.
     sendSwitchCommand(0xfd)
     sleepAfterUartCommand()
 
 def sendClearSwitchAggregatorOverrideAndAggregatedState():
+        # this is getting fragile: if home is dumb it won't react.
         sendSwitchCommand(0xfc)
         sleepAfterUartCommand()
 

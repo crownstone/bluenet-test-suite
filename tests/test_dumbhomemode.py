@@ -11,7 +11,7 @@ from firmwarecontrol.utils import *
 # ----------------------------------------------------------------------------------------------------------------------
 
 def common_setup():
-    sendClearSwitchAggregatorOverrideAndAggregatedState()
+    sendSwitchAggregatorReset()
     sendClearBehaviourStoreEvent()
     time.sleep(1)
 
@@ -32,12 +32,13 @@ def buildDumbScenario(FW):
     # loops through all hours to check if everything is as dumb at all times.
     for hour in range (24):
         scenario.setTime(hour, 0)
+        scenario.wait(1)
 
-        comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0"
+        comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1"
         scenario.addExpect("SwitchAggregator", "overrideState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpectAny("SwitchAggregator", "aggregatedState", ["0", "-1"], comment)
 
         comment = "when switchcraft happens in dumb mode it should always result in translucent override aggregated to 100"
         scenario.addEvent(sendSwitchCraftEvent)
@@ -62,7 +63,7 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
         # clear aggregator for next loop iteration
-        scenario.addEvent(sendClearSwitchAggregatorOverrideState)
+        scenario.addEvent(sendSwitchAggregatorReset)
 
     return scenario
 
@@ -74,6 +75,7 @@ def buildSmartScenario(FW):
     """
     scenario = TestScenario(FW, "SmartHome")
     scenario.addEvent(common_setup)
+    scenario.addEvent(bind(sendCommandDumbMode, False))
 
     # scenario.addEvent(bind(sendCommandDumbMode,False))
 

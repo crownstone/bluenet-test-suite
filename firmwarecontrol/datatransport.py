@@ -40,7 +40,7 @@ def sendEventToCrownstone(eventtype, eventdata):
 def sendCommandToCrownstone(commandtype, packetcontent):
     """
     Send a control command to the crownstone with the given commandtype.
-    commandtype: as documented in PROTOCOL.md
+    commandtype: as documented in PROTOCOL.md#command-types
     packetcontent: as documented in PROTOCOL.md
     """
     controlPacket = ControlPacket(commandtype)

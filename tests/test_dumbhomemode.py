@@ -4,13 +4,14 @@ All tests that concern a single switch behaviour.
 
 from testframework.framework import *
 from testframework.scenario import *
+from firmwarecontrol.utils import *
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios
 # ----------------------------------------------------------------------------------------------------------------------
 
 def common_setup():
-    sendClearSwitchAggregatorOverride()
+    sendClearSwitchAggregatorOverrideAndAggregatedState()
     sendClearBehaviourStoreEvent()
     time.sleep(1)
 
@@ -26,9 +27,9 @@ def buildDumbScenario(FW):
     """
     scenario = TestScenario(FW, "DumbHome")
     scenario.addEvent(common_setup)
+    scenario.addEvent(bind(sendCommandDumbMode,True))
 
-    # scenario.addEvent(bind(sendCommandDumbMode,True))
-
+    # loops through all hours to check if everything is as dumb at all times.
     for hour in range (24):
         scenario.setTime(hour, 0)
 
@@ -38,7 +39,7 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
-        comment = "when switchcraft happens it should always result in intensity 100"
+        comment = "when switchcraft happens in dumb mode it should always result in intensity 100"
         scenario.addEvent(sendSwitchCraftEvent)
         scenario.addExpect("SwitchAggregator", "overrideState", "100", comment)
         scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
@@ -61,15 +62,15 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
         # clear aggregator for next loop iteration
-        scenario.addEvent(sendClearSwitchAggregatorOverride)
+        scenario.addEvent(sendClearSwitchAggregatorOverrideState)
 
     return scenario
 
 
 def buildSmartScenario(FW):
     """
-    Several behaviours and twilights are set up, the parameter home_is_smart will
-    decide wether or not to turn on dumb home mode and expectancies are adjusted accordinginly.
+    Several behaviours and twilights are set up  and checked for validity.
+    (This is to check if reactivating smart home restores its capabilities).
     """
     scenario = TestScenario(FW, "SmartHome")
     scenario.addEvent(common_setup)
@@ -128,8 +129,9 @@ def run_all_scenarios(FW):
     result = []
 
     scenarios = [
-        buildDumbScenario(FW),
         buildSmartScenario(FW),
+        buildDumbScenario(FW),
+        buildSmartScenario(FW), # run smart home again to check if everything was restored back to normal
     ]
 
     for scenario in scenarios:

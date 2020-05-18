@@ -25,6 +25,17 @@ class RssiDataTracker:
         # the rssi/time data stream
         self.rssitimeseries = dict()
 
+        self.trackerfile = open("rssidata.csv", "w+",)
+        print("# ", "Tracker file created on: ", datetime.datetime.now())
+        print("# ", " | ".join([
+            "time",
+            "sender",
+            "recipient",
+            "channel",
+            "rssi"
+        ]), file=self.trackerfile)
+
+
     def record(self, e):
         """
         Add a recorded rssi value for the pair of crowstone ids (i,j).
@@ -54,6 +65,9 @@ class RssiDataTracker:
 
         self.rssitimeseries[i_j][channel]["time"] += [e.time]
         self.rssitimeseries[i_j][channel]["rssi"] += [rssi]
+
+        print("writing to file")
+        print(",".join([str(x) for x in [e.time, sender, recipient, channel, rssi]]), file=self.trackerfile)
 
     def getLastN(self, i, j, n=1):
         """

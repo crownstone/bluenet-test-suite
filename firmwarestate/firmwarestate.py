@@ -5,7 +5,7 @@ from BluenetLib.lib.core.uart.UartTypes import UartRxType
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
 
 from firmwarecontrol.datatransport import initializeUSB
-from firmwarestate.firmwarestatehistoryentry import FirmwareStateHistoryEntry
+from firmwarestatehistoryentry import FirmwareStateHistoryEntry
 
 import datetime
 import pprint

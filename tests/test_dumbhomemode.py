@@ -54,13 +54,13 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
-        comment = "received switch commands should not be executed, not even the translucent one"
+        comment = "received switch commands should still be executed"
         scenario.addEvent(bind(sendSwitchCommand,80))
-        scenario.addExpect("SwitchAggregator", "overrideState", "0", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "80", comment)
+        scenario.addExpect("SwitchAggregator", "aggregatedState", "80", comment)
         scenario.addEvent(bind(sendSwitchCommand, 0xff))
-        scenario.addExpect("SwitchAggregator", "overrideState", "0", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
+        # aggregated state depends on time...
 
         # clear aggregator for next loop iteration
         scenario.addEvent(sendSwitchAggregatorReset)

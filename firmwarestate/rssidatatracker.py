@@ -27,6 +27,14 @@ class PingMessage:
     def __str__(self):
         return ",".join([str(x) for x in [self.timestamp, self.sender, self.recipient, self.channel, self.rssi]])
 
+class RssiStream:
+    def __init__(self):
+        self.times = []
+        self.rssis = []
+
+    def prune(self, time_minimum):
+        # TODO: remove items with time < time_minimum
+        pass
 
 class RssiDataTracker:
     def __init__(self, FW):
@@ -140,17 +148,28 @@ class RssiDataTracker:
 
 class Main:
     def __init__(self):
+        # initialize components and USB
         self.bluenet = Bluenet()
         self.fwState = FirmwareState()
         initializeUSB(self.bluenet, "ttyACM", range(4))
 
-        self. rssiDataTracker = RssiDataTracker(self.fwState)
-
+        # general plotting parameters
         self.trackerfilename = "rssidata.csv"
+        self.num_samples_for_median_filter = 1
+        self.plotwindow_width = datetime.timedelta(seconds=60)
 
+        # define some run time variables
+
+        # incoming ping messages get split out into this dict for quick iteration.
+        # it will be pruned according to the plotting window.
+        self.stonePairToChannelStreamsDict = dict()
+
+        # queues into which the RssiDataTracker can put its recorded ping messages
         self.pingQueueForLogging = queue.Queue()
         self.pingQueueForPlotting = queue.Queue()
 
+        # set up the tracker
+        self.rssiDataTracker = RssiDataTracker(self.fwState)
         self.rssiDataTracker.addPingListenerQueue(self.pingQueueForLogging)
         self.rssiDataTracker.addPingListenerQueue(self.pingQueueForPlotting)
 
@@ -170,24 +189,36 @@ class Main:
         return self
 
     def __exit__(self, type, value, traceback):
+        # seems to not be called on SIGINT
         print("exiting main")
         self.trackerfile.close()
         self.bluenet.stop()
 
     def processPingQueueForLogging(self):
         # non blocking processor method
-        # with self.trackerfile. as logfile:
         while not self.pingQueueForLogging.empty():
             ping = self.pingQueueForLogging.get()
-            print("writing to file", ping)
             print(ping, file=self.trackerfile)
         self.trackerfile.flush()
 
+    def pruneStonePairToChannelStreamsDict(self):
+        time_minimum = datetime.datetime.now() - self.plotwindow_width
+
+        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
+            for channel, rssiStream in channelToStreamDict.items():
+                rssiStream.prune(time_minimum)
+
     def processPingQueueForPlotting(self):
-        # non blocking processor method
+        """
+        updates the stonePairToChannelStreamsDict with new ping messages,
+        trimming messages that have become stale.
+
+        (non blocking processor method)
+        """
         while not self.pingQueueForPlotting.empty():
             ping = self.pingQueueForPlotting.get()
             print("plotting: ", ping)
+            # TODO: add items to the right stream
 
     def medianFilter(self, list_of_floats, samples_per_median):
         l = list_of_floats
@@ -196,95 +227,48 @@ class Main:
             median(l[max(k-samples_per_median, 0): k] or [l[0]]) for k in range(M)
         ]
 
-    # def loadRssiDictFromFile(self):
-    #     rssidict = dict()
-    #
-    #     # load data from file
-    #     with open(self.rssiDataTracker.trackerfilename, "r") as rssifile:
-    #         print("read from rssi tracker file")
-    #         # improve:
-    #         # save pointer to last datapoint in current timewindow,
-    #         # and seek to this pointer to skip all stale entries.
-    #         for line in rssifile:
-    #             if len(line) == 0 or line[0] == "#":
-    #                 continue
-    #             vals = line.split(",")
-    #             tim = vals[0]
-    #             sender = vals[1]
-    #             recipient = vals[2]
-    #             channel = vals[3]
-    #             rssi = vals[4]
-    #
-    #             #if vals[0] < time_minimum:
-    #             #    continue  # stale_value_ptr = rssifile.tell()
-    #
-    #             i_j = frozenset([sender, recipient])
-    #
-    #             if i_j not in rssidict:
-    #                 # add a first dict mapping the current channel to two empty series
-    #                 rssidict[i_j] = {channel: {"rssi": [], "time": []}}
-    #             if channel not in rssidict[i_j]:
-    #                 # add extra dict for new channels
-    #                 rssidict[i_j][channel] = {"rssi": [], "time": []}
-    #
-    #             rssidict[i_j][channel]["time"] += [tim]
-    #             rssidict[i_j][channel]["rssi"] += [rssi]
-    #
-    #     return rssidict
+    def updatePlotData(self, i, axs_flat):
+        self.processPingQueueForPlotting()
+        self.pruneStonePairToChannelStreamsDict()
+
+        # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
+        # we have at most six subplots.
+        ax_index = 0
+        axs_dict = dict()
+        for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
+            axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
+            ax_index += 1
+            if ax_index >= len(axs_flat):
+                break
+
+        # loop over the available data per crownstone pair
+        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
+            if i_j not in axs_dict:
+                # can't plot if there is no axis for it. (will happen for the 5th crownstone)
+                break
+
+            # label subplot with the pair id.
+            ax = axs_dict[i_j]
+            ax.clear()
+            ax.set_xlabel("time(s)")
+            ax.set_ylabel("rssi(dB)" + "->".join(i_j))
+
+            # loop over all channels on this pair of crownstones and plot each as a separate line.
+            for channel, rssiStream in channelToStreamDict.items():
+                ax.plot(rssiStream.times, self.medianFilter(rssiStream.rssis, self.num_samples_for_median_filter),
+                        marker='o', markersize=3,
+                        label="ch: {0}".format(channel))
 
 
     def run(self):
+        """
+        Method will set up an animation and run it.
+        In parallel it will record the data to file.
+        """
         fig, axs = plt.subplots(2, 3, sharex=True)
-        axs_flat = list(chain.from_iterable(axs)) # for practical reasons have a flattened version of the axs
+        axs_flat = list(chain.from_iterable(axs))  # for practical reasons have a flattened version of the axs
 
-        # general plotting parameters
-        num_samples_for_median_filter = 1
-        plotwindow_width = datetime.timedelta(seconds=60)
-        time_minimum = datetime.datetime.now() - plotwindow_width
-
-        def animate(i):
-            self.processPingQueueForPlotting()
-
-            # build a mapping from the lowest crownstone ids pair to an ax of the figure
-            ax_index = 0
-            axs_dict = dict()
-            for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
-                axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
-                ax_index += 1
-                if ax_index >= len(axs_flat):
-                    break
-
-            #rssidict = self.loadRssiDictFromFile()
-            rssidict = self.rssiDataTracker.rssitimeseries
-
-            # loop over the available data per crownstone pair
-            for series_ij, channel_to_series_time_and_rssi in rssidict.items():
-                if series_ij not in axs_dict:
-                    # can't plot if there is no axis for it. (will happen for the 5th crownstone)
-                    break
-
-                # label subplot with the pair id.
-                ax = axs_dict[series_ij]
-                ax.clear()
-                ax.set_xlabel("time(s)")
-                ax.set_ylabel("rssi(dB)" + "->".join(series_ij))
-
-                # loop over all channels on this pair of crownstones and plot each as a separate line.
-                for channel, time_rssi_series_dict in channel_to_series_time_and_rssi.items():
-                    series_time = time_rssi_series_dict["time"]
-                    series_rssi = time_rssi_series_dict["rssi"]
-
-                    # trim the series to fit the time window
-                    series_time = [(t-time_minimum).total_seconds() for t in series_time if t >= time_minimum]
-                    series_rssi = self.medianFilter(series_rssi[-len(series_time) : ], num_samples_for_median_filter)
-
-                    ax.plot(series_time, series_rssi,
-                             marker='o', markersize=3,
-                             label="ch: {0}".format(channel))
-
-                # ax.legend()
-
-        ani = animation.FuncAnimation(fig, animate, interval=250)
+        ani = animation.FuncAnimation(fig, lambda i: self.updatePlotData(i, axs_flat), interval=250)
         plt.show()
 
         while True:

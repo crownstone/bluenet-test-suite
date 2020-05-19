@@ -36,7 +36,6 @@ class RssiStream:
         indx = next(idx for idx, t in enumerate(self.times) if t >= time_minimum)
         self.times = self.times[indx:]
         self.rssis = self.rssis[indx:]
-        # print("pruning indx:", indx)
 
     def put(self, t, r):
         self.times.append(t)
@@ -79,6 +78,9 @@ class RssiDataTracker:
         expr = e.valuename.split("_")
         if expr[0] != "rssi" or len(expr) != 4:
             return
+
+        self.activeCrownstoneIds.add(expr[1])  # sender
+        self.activeCrownstoneIds.add(expr[2])  # receiver
 
         ping = PingMessage(e.time, expr[1], expr[2], int(expr[3]), float(e.value))
 
@@ -236,10 +238,6 @@ class Main:
 
             self.stonePairToChannelStreamsDict[ij][ping.channel].put(ping.timestamp, ping.rssi)
 
-        # for streamdict in self.stonePairToChannelStreamsDict.values():
-        #     for stream in streamdict.values():
-        #         stream.printStatus()
-
     def medianFilter(self, list_of_floats, samples_per_median):
         l = list_of_floats
         M = len(l)
@@ -277,12 +275,9 @@ class Main:
 
             # loop over all channels on this pair of crownstones and plot each as a separate line.
             for channel, rssiStream in channelToStreamDict.items():
-                print("ij:", "->".join(i_j), " ch:", channel)
-                rssiStream.printStatus()
                 ax.plot(rssiStream.times, self.medianFilter(rssiStream.rssis, self.num_samples_for_median_filter),
                         marker='o', markersize=3,
                         label="ch: {0}".format(channel))
-        # print (statusstring)
 
 
     def run(self):

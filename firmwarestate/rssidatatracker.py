@@ -13,6 +13,7 @@ from firmwarecontrol.datatransport import initializeUSB
 from firmwarestate import FirmwareState
 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import matplotlib.animation as animation
 
 
@@ -166,8 +167,8 @@ class Main:
 
         # general plotting parameters
         self.trackerfilename = "rssidata.csv"
-        self.num_samples_for_median_filter = 1
-        self.plotwindow_width = datetime.timedelta(seconds=30)
+        self.num_samples_for_median_filter = 5
+        self.plotwindow_width = datetime.timedelta(seconds=60)
 
         # define some run time variables
 
@@ -213,9 +214,7 @@ class Main:
             print(ping, file=self.trackerfile)
         self.trackerfile.flush()
 
-    def pruneStonePairToChannelStreamsDict(self):
-        time_minimum = datetime.datetime.now() - self.plotwindow_width
-
+    def pruneStonePairToChannelStreamsDict(self, time_minimum):
         for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
             for channel, rssiStream in channelToStreamDict.items():
                 rssiStream.prune(time_minimum)
@@ -245,9 +244,14 @@ class Main:
             median(l[max(k-samples_per_median, 0): k] or [l[0]]) for k in range(M)
         ]
 
-    def updatePlotData(self, i, axs_flat):
+    def updatePlotData(self, i, fig, axs_flat):
+        now = datetime.datetime.now()
+        time_minimum = now - self.plotwindow_width
         self.processPingQueueForPlotting()
-        self.pruneStonePairToChannelStreamsDict()
+        self.pruneStonePairToChannelStreamsDict(time_minimum)
+
+        fig.suptitle("RSSIs for active stones: " + ",".join(["#" + str(id) for id in sorted(self.rssiDataTracker.activeCrownstoneIds)]), fontsize=12)
+        myFmt =mdates.DateFormatter('%H:%M:%S')
 
         # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
         # we have at most six subplots.
@@ -259,8 +263,6 @@ class Main:
             if ax_index >= len(axs_flat):
                 break
 
-        statusstring = "plotting: "
-
         # loop over the available data per crownstone pair
         for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
             if i_j not in axs_dict:
@@ -270,8 +272,16 @@ class Main:
             # label subplot with the pair id.
             ax = axs_dict[i_j]
             ax.clear()
+            ax.set_title(' -> '.join(sorted(i_j)))
             ax.set_xlabel("time(s)")
-            ax.set_ylabel("rssi(dB)" + "->".join(i_j))
+            ax.set_xlim(time_minimum, now)
+            ax.xaxis.set_major_formatter(myFmt) # formats the x-axis ticks
+            ax.format_xdata = myFmt # formats the on-hover message box
+
+            # reduce number of ticks on x-axis
+            ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+
+            ax.set_ylabel("rssi(dB)")
 
             # loop over all channels on this pair of crownstones and plot each as a separate line.
             for channel, rssiStream in channelToStreamDict.items():
@@ -287,8 +297,7 @@ class Main:
         """
         fig, axs = plt.subplots(2, 3, sharex=True)
         axs_flat = list(chain.from_iterable(axs))  # for practical reasons have a flattened version of the axs
-
-        ani = animation.FuncAnimation(fig, lambda i: self.updatePlotData(i, axs_flat), interval=250)
+        ani = animation.FuncAnimation(fig, lambda i: self.updatePlotData(i, fig, axs_flat), interval=250)
         plt.show()
 
         while True:

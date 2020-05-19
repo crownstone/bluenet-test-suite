@@ -33,8 +33,17 @@ class RssiStream:
         self.rssis = []
 
     def prune(self, time_minimum):
-        # TODO: remove items with time < time_minimum
-        pass
+        indx = next(idx for idx, t in enumerate(self.times) if t >= time_minimum)
+        self.times = self.times[indx:]
+        self.rssis = self.rssis[indx:]
+        # print("pruning indx:", indx)
+
+    def put(self, t, r):
+        self.times.append(t)
+        self.rssis.append(r)
+
+    def printStatus(self):
+        print("RssiStream: {0}-{1}, #{2} samples".format(self.times[0], self.times[-1], len(self.rssis)))
 
 class RssiDataTracker:
     def __init__(self, FW):
@@ -156,12 +165,13 @@ class Main:
         # general plotting parameters
         self.trackerfilename = "rssidata.csv"
         self.num_samples_for_median_filter = 1
-        self.plotwindow_width = datetime.timedelta(seconds=60)
+        self.plotwindow_width = datetime.timedelta(seconds=30)
 
         # define some run time variables
 
         # incoming ping messages get split out into this dict for quick iteration.
         # it will be pruned according to the plotting window.
+        # using frozensets as primary keys.
         self.stonePairToChannelStreamsDict = dict()
 
         # queues into which the RssiDataTracker can put its recorded ping messages
@@ -217,8 +227,18 @@ class Main:
         """
         while not self.pingQueueForPlotting.empty():
             ping = self.pingQueueForPlotting.get()
-            print("plotting: ", ping)
-            # TODO: add items to the right stream
+
+            ij = frozenset([ping.sender, ping.recipient])
+            if ij not in self.stonePairToChannelStreamsDict:
+                self.stonePairToChannelStreamsDict[ij] = dict()
+            if ping.channel not in self.stonePairToChannelStreamsDict[ij]:
+                self.stonePairToChannelStreamsDict[ij][ping.channel] = RssiStream()
+
+            self.stonePairToChannelStreamsDict[ij][ping.channel].put(ping.timestamp, ping.rssi)
+
+        # for streamdict in self.stonePairToChannelStreamsDict.values():
+        #     for stream in streamdict.values():
+        #         stream.printStatus()
 
     def medianFilter(self, list_of_floats, samples_per_median):
         l = list_of_floats
@@ -241,6 +261,8 @@ class Main:
             if ax_index >= len(axs_flat):
                 break
 
+        statusstring = "plotting: "
+
         # loop over the available data per crownstone pair
         for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
             if i_j not in axs_dict:
@@ -255,9 +277,12 @@ class Main:
 
             # loop over all channels on this pair of crownstones and plot each as a separate line.
             for channel, rssiStream in channelToStreamDict.items():
+                print("ij:", "->".join(i_j), " ch:", channel)
+                rssiStream.printStatus()
                 ax.plot(rssiStream.times, self.medianFilter(rssiStream.rssis, self.num_samples_for_median_filter),
                         marker='o', markersize=3,
                         label="ch: {0}".format(channel))
+        # print (statusstring)
 
 
     def run(self):

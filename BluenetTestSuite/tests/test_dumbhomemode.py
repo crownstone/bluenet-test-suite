@@ -2,9 +2,9 @@
 All tests that concern a single switch behaviour.
 """
 
-from testframework.framework import *
-from testframework.scenario import *
-from firmwarecontrol.utils import *
+from BluenetTestSuite.testframework.framework import *
+from BluenetTestSuite.testframework.scenario import *
+from BluenetTestSuite.firmwarecontrol.utils import *
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios

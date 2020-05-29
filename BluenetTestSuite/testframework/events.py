@@ -3,7 +3,7 @@
 # it comes with a time at which it should fire.
 # the test will sort the event times and execute them until the first returns a non-Falsey value
 # when that happens, it considers the scenario failed and reports back the returned value.
-from testframework.framework import TestFramework
+from BluenetTestSuite.testframework.framework import TestFramework
 
 # TODO: actually write an event class with a time and 'onTrigger' field and refactor tests to use them.
 

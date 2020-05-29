@@ -1,8 +1,8 @@
 import time
 import uuid
 
-from testframework.framework import *
-from firmwarecontrol.datatransport import *
+from BluenetTestSuite.testframework.framework import *
+from BluenetTestSuite.firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
 import datetime

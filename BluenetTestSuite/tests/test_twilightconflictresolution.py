@@ -1,7 +1,7 @@
-from testframework.framework import *
-from testframework.events import *
-from firmwarecontrol.utils import *
-from firmwarecontrol.datatransport import *
+from BluenetTestSuite.testframework.framework import *
+from BluenetTestSuite.testframework.events import *
+from BluenetTestSuite.firmwarecontrol.utils import *
+from BluenetTestSuite.firmwarecontrol.datatransport import *
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
 """

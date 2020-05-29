@@ -9,8 +9,8 @@ import datetime
 import queue
 
 from BluenetLib import Bluenet
-from firmwarecontrol.datatransport import initializeUSB
-from firmwarestate import FirmwareState
+from BluenetTestSuite.firmwarecontrol.datatransport import initializeUSB
+from BluenetTestSuite.firmwarestate.firmwarestate import FirmwareState
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

@@ -1,7 +1,7 @@
 import unittest
 
-from firmwarecontrol import *
-from firmwarestate.firmwarestate import *
+from BluenetTestSuite.firmwarecontrol import *
+from BluenetTestSuite.firmwarestate.firmwarestate import *
 from BluenetLib import Bluenet
 import uuid
 from colorama import Fore, Back, Style

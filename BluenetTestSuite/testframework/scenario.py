@@ -1,7 +1,7 @@
 from time import time
 
-from testframework.events import *
-from firmwarecontrol.utils import *
+from BluenetTestSuite.testframework.events import *
+from BluenetTestSuite.firmwarecontrol.utils import *
 
 class TestScenario:
     """

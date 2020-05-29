@@ -8,8 +8,8 @@ from BluenetLib.lib.packets.behaviour.SwitchBehaviour import SwitchBehaviour
 from BluenetLib.lib.packets.behaviour.TwilightBehaviour import TwilightBehaviour
 from BluenetLib.lib.protocol.BluenetTypes import ControlType, StateType
 
-from firmwarecontrol.datatransport import *
-from firmwarecontrol.InternalEventCodes import EventType
+from BluenetTestSuite.firmwarecontrol.datatransport import *
+from BluenetTestSuite.firmwarecontrol.InternalEventCodes import EventType
 
 
 def buildSwitchBehaviour(from_hours, to_hours, intensity):

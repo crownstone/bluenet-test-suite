@@ -1,5 +1,9 @@
 # bluenet-test-suite
 This repository contains Bluenet integration tests (e.g. over UART).
+For usage in test scripts that aren't supposed to be in this repository,
+the test suite can be installed in developer mode by running the following command from this directory:
+
+`sudo python3 setup.py develop` 
 
 # Dependencies
 https://github.com/crownstone/bluenet-python-lib

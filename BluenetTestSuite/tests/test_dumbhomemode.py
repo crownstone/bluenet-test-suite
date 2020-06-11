@@ -4,7 +4,8 @@ All tests that concern a single switch behaviour.
 
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.testframework.scenario import *
-from BluenetTestSuite.firmwarecontrol.utils import *
+from BluenetTestSuite.firmwarecontrol.switchaggregator import *
+from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios

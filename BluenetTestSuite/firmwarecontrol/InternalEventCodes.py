@@ -16,7 +16,10 @@ class EventTypeCategory(IntEnum):
     InternalBaseLocalisation      = InternalBase + 190
     InternalBaseSystem            = InternalBase + 210
 
+# corresponds with CS_TYPE
 class EventType(IntEnum):
+    STATE_BEHAVIOUR_SETTINGS      = 150,
+
     CMD_SWITCH_OFF                = EventTypeCategory.InternalBaseSwitch + 0
     CMD_SWITCH_ON                 = EventTypeCategory.InternalBaseSwitch + 1
     CMD_SWITCH_TOGGLE             = EventTypeCategory.InternalBaseSwitch + 2
@@ -27,3 +30,5 @@ class EventType(IntEnum):
     CMD_SWITCHING_ALLOWED         = EventTypeCategory.InternalBaseSwitch + 7
     CMD_DIMMING_ALLOWED           = EventTypeCategory.InternalBaseSwitch + 8
     CMD_SWITCH_AGGREGATOR_RESET   = EventTypeCategory.InternalBaseSwitch + 9
+
+

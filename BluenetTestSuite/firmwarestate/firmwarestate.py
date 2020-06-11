@@ -4,6 +4,9 @@ from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
 from BluenetLib.lib.core.uart.UartTypes import UartRxType
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
 
+from BluenetTestSuite.firmwarecontrol.datatransport import initializeUSB
+from BluenetTestSuite.firmwarestate.firmwarestatehistoryentry import FirmwareStateHistoryEntry
+
 import datetime
 import pprint
 
@@ -19,6 +22,9 @@ class FirmwareState:
         # thisptr -> valuename -> value
         self.statedict = dict()
         self.historylist = []
+
+        # list of callbacks taking one firmwarestatehistoryentry as parameter
+        self.onNewEntryParsed = []
 
     def clear(self):
         """
@@ -58,6 +64,9 @@ class FirmwareState:
             self.pushstatevalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
             self.pushhistoryvalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
 
+            for callback in self.onNewEntryParsed:
+                callback(self.historylist[-1])
+
     def construct(self, ptr, typename):
         """
         Appends [typename] to self.statedict[ptr]["typename."].
@@ -86,7 +95,8 @@ class FirmwareState:
         """
         Adds a record to the historylist.
         """
-        self.historylist += [[datetime.datetime.now(), ptr, classname, valuename, value]]
+        self.historylist += [FirmwareStateHistoryEntry(
+            datetime.datetime.now(), ptr, classname, valuename, value)]
 
     def printhistory(self):
         prettyprinter = pprint.PrettyPrinter(indent=4)
@@ -139,21 +149,6 @@ class FirmwareState:
     def assertFindFailures(self, classname, expressionname, value):
         return self.assertFindFailuresMulti(classname, expressionname, [value])
 
-def initializeUSB(bluenet_instance, portname, a_range):
-    """
-    Tries to connect to the given busname with the given index. If it finds one it will break,
-    logs where there is none. And returns full connected port name as string on success/None object on failure.
-    """
-    for i in a_range:
-        try:
-            port = "/dev/{0}{1}".format(portname, i)
-            bluenet_instance.initializeUSB(port)
-            return port
-        except Exception as err:
-            print("coudn't find '/dev/ttyACM{0}', trying next port".format(i))
-            print(err)
-    return None
-
 class Main:
     """
     If this file is run as stand alone script, it will output the current state of the firmware.
@@ -198,6 +193,8 @@ class Main:
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
                         self.fwState.print()
+                    if event.key == ord('h'):
+                        self.fwState.printhistory()
                     if event.key == ord('q')  or event.key == ord('Q') or event.key == pygame.K_ESCAPE:
                         run = False
 

@@ -2,15 +2,16 @@
 All tests that concern a single switch behaviour.
 """
 
-from testframework.framework import *
-from testframework.scenario import *
+from BluenetTestSuite.testframework.framework import *
+from BluenetTestSuite.testframework.scenario import *
+from BluenetTestSuite.firmwarecontrol.utils import *
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Definition of the scenarios
 # ----------------------------------------------------------------------------------------------------------------------
 
 def common_setup():
-    sendClearSwitchAggregatorOverride()
+    sendSwitchAggregatorReset()
     sendClearBehaviourStoreEvent()
     time.sleep(1)
 
@@ -26,21 +27,22 @@ def buildDumbScenario(FW):
     """
     scenario = TestScenario(FW, "DumbHome")
     scenario.addEvent(common_setup)
+    scenario.addEvent(bind(sendCommandDumbMode,True))
 
-    # scenario.addEvent(bind(sendCommandDumbMode,True))
-
+    # loops through all hours to check if everything is as dumb at all times.
     for hour in range (24):
         scenario.setTime(hour, 0)
+        scenario.wait(1)
 
-        comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0"
+        comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1"
         scenario.addExpect("SwitchAggregator", "overrideState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpectAny("SwitchAggregator", "aggregatedState", ["0", "-1"], comment)
 
-        comment = "when switchcraft happens it should always result in intensity 100"
+        comment = "when switchcraft happens in dumb mode it should always result in translucent override aggregated to 100"
         scenario.addEvent(sendSwitchCraftEvent)
-        scenario.addExpect("SwitchAggregator", "overrideState", "100", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
         scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "100", comment)
@@ -52,32 +54,34 @@ def buildDumbScenario(FW):
         scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
         scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
 
-        comment = "received switch commands should not be executed, not even the translucent one"
+        comment = "received switch commands should still be executed"
         scenario.addEvent(bind(sendSwitchCommand,80))
-        scenario.addExpect("SwitchAggregator", "overrideState", "0", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "80", comment)
+        scenario.addExpect("SwitchAggregator", "aggregatedState", "80", comment)
         scenario.addEvent(bind(sendSwitchCommand, 0xff))
-        scenario.addExpect("SwitchAggregator", "overrideState", "0", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
+        # aggregated state depends on time...
 
         # clear aggregator for next loop iteration
-        scenario.addEvent(sendClearSwitchAggregatorOverride)
+        scenario.addEvent(sendSwitchAggregatorReset)
 
     return scenario
 
 
 def buildSmartScenario(FW):
     """
-    Several behaviours and twilights are set up, the parameter home_is_smart will
-    decide wether or not to turn on dumb home mode and expectancies are adjusted accordinginly.
+    Several behaviours and twilights are set up  and checked for validity.
+    (This is to check if reactivating smart home restores its capabilities).
     """
     scenario = TestScenario(FW, "SmartHome")
     scenario.addEvent(common_setup)
+    scenario.addEvent(bind(sendCommandDumbMode, False))
 
     # scenario.addEvent(bind(sendCommandDumbMode,False))
 
     # nothing is active yet
     scenario.setTime(8, 0)
+    scenario.wait(1)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should've been equal to twilight value")
 
@@ -128,8 +132,9 @@ def run_all_scenarios(FW):
     result = []
 
     scenarios = [
-        buildDumbScenario(FW),
         buildSmartScenario(FW),
+        buildDumbScenario(FW),
+        buildSmartScenario(FW), # run smart home again to check if everything was restored back to normal
     ]
 
     for scenario in scenarios:

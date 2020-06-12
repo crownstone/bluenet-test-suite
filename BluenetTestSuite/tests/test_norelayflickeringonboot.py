@@ -27,8 +27,8 @@ def test_norelayflickeringonboot_loopbody(FW, minimal_relay_half_period_ms):
 
     # filter relevant history
     relay_history_time_value_pairs = [
-        [logentry[0], logentry[4]]
-        for logentry in FW.historylist if logentry[2] == "Relay" and logentry[3] == "on"
+        [logentry.time, logentry.value]
+        for logentry in FW.historylist if logentry.classname == "Relay" and logentry.valuename == "on"
     ]
 
     min_time_diff_between_relay_switches = datetime.timedelta(microseconds=minimal_relay_half_period_ms * 1000)
@@ -76,6 +76,7 @@ def test_norelayflickeringonboot(FW):
 if __name__ == "__main__":
     with TestFramework(test_norelayflickeringonboot) as frame:
         if frame != None:
-            print(frame.test_run())
+            for result in frame.test_run():
+                print(result)
         else:
             print(TestFramework.failure())

@@ -57,7 +57,7 @@ class FirmwareState:
             for byte in dataPacket.payload:
                 if byte < 128:
                     stringResult += chr(byte)
-            statelist = stringResult.split(",")
+            statelist = stringResult.split("@")
 
             statelist[1] = self.classnamefromprettyfunction(statelist[1])
 

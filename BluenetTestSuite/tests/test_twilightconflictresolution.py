@@ -1,8 +1,11 @@
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.testframework.events import *
-from BluenetTestSuite.firmwarecontrol.utils import *
-from BluenetTestSuite.firmwarecontrol.datatransport import *
-from BluenetLib.lib.protocol.BluenetTypes import ControlType
+
+from BluenetTestSuite.firmwarecontrol.behaviourstore import *
+from BluenetTestSuite.firmwarecontrol.switchaggregator import *
+# from BluenetTestSuite.firmwarecontrol.utils import *
+# from BluenetTestSuite.firmwarecontrol.datatransport import *
+# from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
 """
 Note: this test was written before scenario and event classes were defined, it could use a

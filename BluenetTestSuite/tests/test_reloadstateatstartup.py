@@ -16,6 +16,7 @@ import time
 
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.firmwarecontrol.datatransport import *
+from BluenetTestSuite.testframework.events import expect
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
 
@@ -39,17 +40,30 @@ def test_bootloadsflashintooverride_loopbody(FW, intensity):
 
     # Test SwitchAggregator.overrideState
     expected_override_state = min(max(0, intensity), 100)
-    if FW.assertFindFailures("SwitchAggregator", 'overrideState', expected_override_state):
-        FW.print()
-        return TestFramework.failure("overrideState should've been {0} after reset".format(
-                expected_override_state))
+    # if FW.assertFindFailures("SwitchAggregator", 'overrideState', expected_override_state):
+    #     FW.print()
+    #     return TestFramework.failure("overrideState should've been {0} after reset".format(
+    #             expected_override_state))
+
+    response = expect(FW, "SwitchAggregator", 'overrideState', expected_override_state,
+                      "overrideState should've been {0} after reset".format(
+                          expected_override_state))
+
+    if response is not None:
+        return response
 
     # Test Relay.on
     expected_relay_state = bool((intensity >> 7) & 1)
-    if FW.assertFindFailures("Relay", 'on', expected_relay_state):
-        FW.print()
-        return TestFramework.failure("relaystate should've been {0} after reset".format(
-                expected_relay_state))
+    response = expect(FW,"Relay", 'on', expected_relay_state,
+                      "relaystate should've been {0} after reset".format(
+                            expected_relay_state))
+
+    if response is not None:
+        return response
+    # if FW.assertFindFailures("Relay", 'on', expected_relay_state):
+    #     FW.print()
+    #     return TestFramework.failure("relaystate should've been {0} after reset".format(
+    #             expected_relay_state))
 
     return TestFramework.success()
 
@@ -64,6 +78,7 @@ def test_bootloadsflashintooverride(FW):
 if __name__ == "__main__":
     with TestFramework(test_bootloadsflashintooverride) as frame:
         if frame != None:
-            print(frame.test_run())
+            for result in frame.test_run():
+                print(result)
         else:
             print(TestFramework.failure())

@@ -72,7 +72,7 @@ def test_disabledimmingresolvestorelay_loopbody(FW, intensity):
     time.sleep(0.5)
 
     # print("check override hasn't changed")
-    failures = FW.assertFindFailures("SwitchAggregator", 'overrideState', 0 if intensity == 0 else 100 )
+    failures = FW.assertFindFailures("SwitchAggregator", 'overrideState', 0 if intensity == 0 else 100)
     if failures:
         FW.print()
         FW.printhistory()
@@ -114,6 +114,7 @@ def test_disabledimmingresolvestorelay(FW):
 if __name__ == "__main__":
     with TestFramework(test_disabledimmingresolvestorelay) as frame:
         if frame != None:
-            print(frame.test_run())
+            for result in frame.test_run():
+                print(result)
         else:
             print(TestFramework.failure())

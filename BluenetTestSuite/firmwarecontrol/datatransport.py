@@ -8,6 +8,8 @@ from BluenetLib.lib.core.uart.UartWrapper import UartWrapper
 from BluenetLib.lib.topics.SystemTopics import SystemTopics
 from BluenetLib.lib.protocol.BlePackets import ControlPacket
 
+import time
+
 
 def initializeUSB(bluenet_instance, portname, a_range):
     """
@@ -24,6 +26,9 @@ def initializeUSB(bluenet_instance, portname, a_range):
             print(err)
     return None
 
+def sleepAfterUartCommand():
+    time.sleep(0.5)
+
 
 def sendEventToCrownstone(eventtype, eventdata):
     """
@@ -36,6 +41,7 @@ def sendEventToCrownstone(eventtype, eventdata):
     payload += eventdata
     uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+    sleepAfterUartCommand()
 
 def sendCommandToCrownstone(commandtype, packetcontent):
     """
@@ -48,3 +54,4 @@ def sendCommandToCrownstone(commandtype, packetcontent):
     uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
     # print("sendCommandToCrownstone( type:{0} )".format(commandtype)); print(uartPacket)
     BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+    sleepAfterUartCommand()

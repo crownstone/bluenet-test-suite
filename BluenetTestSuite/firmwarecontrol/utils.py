@@ -4,13 +4,10 @@ Just a bunch of common methods
 
 import time
 
-
 from BluenetLib.lib.protocol.BluenetTypes import ControlType, StateType
 
 from BluenetTestSuite.firmwarecontrol.datatransport import *
 
-def sleepAfterUartCommand():
-    time.sleep(0.5)
 
 def fullReset():
     print("Resetting crownstone and waiting for dimmer to have started for a cleaner test.")
@@ -30,7 +27,6 @@ def getTime_uint32(hours, minutes, day=None):
 def setTime_uint32(time_as_uint32):
     sendCommandToCrownstone(ControlType.SET_TIME,
                             Conversion.uint32_to_uint8_array(time_as_uint32))
-    sleepAfterUartCommand()
 
 def setTime_hmd(hours, minutes, day=None):
     setTime_uint32(getTime_uint32(hours,
@@ -39,7 +35,6 @@ def setTime_hmd(hours, minutes, day=None):
 
 def setAllowDimming(value):
     sendCommandToCrownstone(ControlType.ALLOW_DIMMING, [1 if value else 0])
-    sleepAfterUartCommand()
 
 def sendCommandDumbMode(houseIsDumb):
     setstate_packet = []
@@ -51,4 +46,3 @@ def sendCommandDumbMode(houseIsDumb):
     setstate_packet += Conversion.uint32_to_uint8_array(0x00 if houseIsDumb else 0x01)
     sendCommandToCrownstone(ControlType.SET_STATE, setstate_packet)
     # sendEventToCrownstone(EventType.BEHAVIOURHANDLER_SETTINGS, [0x00 if housIsDumb else 0x01])
-    sleepAfterUartCommand()

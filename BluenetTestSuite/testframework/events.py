@@ -7,6 +7,26 @@ from BluenetTestSuite.testframework.framework import TestFramework
 
 # TODO: actually write an event class with a time and 'onTrigger' field and refactor tests to use them.
 
+from inspect import currentframe
+
+def getLinenumber(frameskip = 0):
+    """
+    returns the line number of at the call site of this function,
+    or the call site of the callers call site, or the call site
+    of that callers call site, or etc.. depth depending on frameskip.
+
+    Pass 0 for line no. of callsite of getLineNumber,
+    pass 1 for callsite of the current function scope.
+    etc.
+    """
+    cf = currentframe()
+    for i in range(frameskip + 1):
+        cf = cf.f_back
+    return cf.f_lineno
+
+def formatComment(commentstr):
+    return "Line {0}: {1}".format(getLinenumber(1), commentstr)
+
 def bind(func, *args):
     """
     Returns a nullary function that calls func with the given arguments.

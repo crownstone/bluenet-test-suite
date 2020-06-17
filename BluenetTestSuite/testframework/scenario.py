@@ -38,13 +38,15 @@ class TestScenario:
         self.addEvent(bind(time.sleep, seconds))
 
     def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
+        formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
-            bind(expect, self.fw, classname, variablename, expectedvalue, errormessage, verbose)
+            bind(expect, self.fw, classname, variablename, expectedvalue, formattederrormessage, verbose)
         )
 
     def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=False):
+        formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
-            bind(expectAny, self.fw, classname, variablename, expectedvalues, errormessage, verbose)
+            bind(expectAny, self.fw, classname, variablename, expectedvalues, formattederrormessage, verbose)
         )
 
     def run(self):
@@ -65,7 +67,7 @@ class TestScenario:
             if t is not None:
                 if t != previous_t and t >= 0:
                     setTime_uint32(t)
-                    print("setTime called: {0}.".format(t))
+                    print("setTime called: {0} ({1:0>2}:{2:0>2}h).".format(t, (t // 3600) % 24, (t % 3600) // 60))
 
             response = evt()
 

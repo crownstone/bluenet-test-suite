@@ -30,10 +30,13 @@ def buildDumbScenario(FW):
     scenario.addEvent(common_setup)
     scenario.addEvent(bind(sendCommandDumbMode,True))
 
+    scenario.wait(1)
+    scenario.addExpect("BehaviourHandler", "isActive", "False" ,"behaviour handler should be inactive when dumb")
+    scenario.addExpect("TwilightHandler", "isActive", "False", "twilight handler should be inactive when dumb")
+
     # loops through all hours to check if everything is as dumb at all times.
     for hour in range (24):
         scenario.setTime(hour, 0)
-        scenario.wait(1)
 
         comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1"
         scenario.addExpect("SwitchAggregator", "overrideState", "-1", comment)
@@ -78,11 +81,12 @@ def buildSmartScenario(FW):
     scenario.addEvent(common_setup)
     scenario.addEvent(bind(sendCommandDumbMode, False))
 
-    # scenario.addEvent(bind(sendCommandDumbMode,False))
+    scenario.wait(1)
+    scenario.addExpect("BehaviourHandler", "isActive", "True", "behaviour handler should be active when smart")
+    scenario.addExpect("TwilightHandler", "isActive", "True", "twilight handler should be active when smart")
 
     # nothing is active yet
     scenario.setTime(8, 0)
-    scenario.wait(1)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", "overridestate should've been set to translucent")
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", "aggregatedState should've been equal to twilight value")
 
@@ -95,7 +99,7 @@ def buildSmartScenario(FW):
     scenario.addEvent(sendSwitchCraftEvent)
 
     scenario.setTime(10, 1)
-    scenario.addExpect( "SwitchAggregator", "overrideState", "255", "overridestate should've been set to translucent after switchcraft")
+    scenario.addExpect( "SwitchAggregator", "overrideState", "255","overridestate should've been set to translucent after switchcraft")
     scenario.addExpect( "SwitchAggregator", "aggregatedState", "80", "aggregatedState should've been equal to twilight value after switchcraft")
 
     # behaviour 1 becomes active
@@ -135,7 +139,7 @@ def run_all_scenarios(FW):
     scenarios = [
         buildSmartScenario(FW),
         buildDumbScenario(FW),
-        buildSmartScenario(FW), # run smart home again to check if everything was restored back to normal
+        buildSmartScenario(FW),  # run smart home again to check if everything was restored back to normal
     ]
 
     for scenario in scenarios:

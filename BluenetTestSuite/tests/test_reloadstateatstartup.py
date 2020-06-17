@@ -16,34 +16,32 @@ import time
 
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.firmwarecontrol.datatransport import *
+from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 from BluenetTestSuite.testframework.events import expect
 from BluenetLib.lib.protocol.BluenetTypes import ControlType
 
 
 def test_bootloadsflashintooverride_loopbody(FW, intensity):
     print("##### setup test_bootloadsflashintooverride_loopbody (intensity: {0}) #####".format(intensity))
+    sendCommandToCrownstone(ControlType.RESET, [])
+    time.sleep(60)  # wait for dimmer to power up...
 
     # override switch state
+    print("sending switch command to crownstone {0}".format(intensity))
     sendCommandToCrownstone(ControlType.SWITCH, [intensity])
-
+    print("sending switch command to crownstone done")
     # need time for persistence of switch state to be pushed.
     time.sleep(15)
 
     # print("reset firmwarestate recorder")
     FW.clear()
-
     # print("restart test subject")
     sendCommandToCrownstone(ControlType.RESET, [])
-
     # print("allow device to reset and startup")
-    time.sleep(10)
+    time.sleep(3)
 
     # Test SwitchAggregator.overrideState
     expected_override_state = min(max(0, intensity), 100)
-    # if FW.assertFindFailures("SwitchAggregator", 'overrideState', expected_override_state):
-    #     FW.print()
-    #     return TestFramework.failure("overrideState should've been {0} after reset".format(
-    #             expected_override_state))
 
     response = expect(FW, "SwitchAggregator", 'overrideState', expected_override_state,
                       "overrideState should've been {0} after reset".format(
@@ -52,23 +50,24 @@ def test_bootloadsflashintooverride_loopbody(FW, intensity):
     if response is not None:
         return response
 
-    # Test Relay.on
+    # Test Relay.on. As dimming is turned on, this should only be true when the 8-th bit of the state is set explicitly.
     expected_relay_state = bool((intensity >> 7) & 1)
-    response = expect(FW,"Relay", 'on', expected_relay_state,
+
+    response = expect(FW,"SafeSwitch", 'storedState.state.relay', expected_relay_state,
                       "relaystate should've been {0} after reset".format(
                             expected_relay_state))
 
     if response is not None:
+        FW.print()
         return response
-    # if FW.assertFindFailures("Relay", 'on', expected_relay_state):
-    #     FW.print()
-    #     return TestFramework.failure("relaystate should've been {0} after reset".format(
-    #             expected_relay_state))
 
     return TestFramework.success()
 
 
 def test_bootloadsflashintooverride(FW):
+    setAllowDimming(True)
+    sendClearBehaviourStoreEvent()
+
     result = []
     for intensity in [0, 100,128]:
         result += [test_bootloadsflashintooverride_loopbody(FW, intensity)]

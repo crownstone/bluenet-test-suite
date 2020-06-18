@@ -11,6 +11,12 @@ from BluenetLib.lib.util.Conversion import Conversion
 
 import pygame #for nice keyboard input
 
+"""
+Note: this file predates the test framework. It contains some useful code which is likely better
+off to be ported over into a jupyter notebook for interactive firmware manipulation as a means for 
+supervised testing. This hasn't been done yet, but see pivotal for the ticket #173401664.
+"""
+
 def printFunctionName():
     print(inspect.currentframe().f_back.f_code.co_name)
 

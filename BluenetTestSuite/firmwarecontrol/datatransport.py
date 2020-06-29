@@ -1,34 +1,15 @@
-# from BluenetLib import Bluenet
-# from BluenetLib import UsbTopics
-from BluenetLib import BluenetEventBus
+from crownstone_core.util.Conversion import Conversion
+from crownstone_core.protocol.BlePackets import ControlPacket
 
-from BluenetLib.lib.core.uart.UartTypes import UartTxType
-from BluenetLib.lib.util.Conversion import Conversion
-from BluenetLib.lib.core.uart.UartWrapper import UartWrapper
-from BluenetLib.lib.topics.SystemTopics import SystemTopics
-from BluenetLib.lib.protocol.BlePackets import ControlPacket
+from crownstone_uart.core.UartEventBus import UartEventBus
+from crownstone_uart.core.uart.UartWrapper import UartWrapper
+from crownstone_uart.core.uart.UartTypes import UartTxType
+from crownstone_uart.topics.SystemTopics import SystemTopics
 
 import time
 
-
-def initializeUSB(bluenet_instance, portname, a_range):
-    """
-    Tries to connect to the given busname with the given index. If it finds one it will break,
-    logs where there is none. And returns full connected port name as string on success/None object on failure.
-    """
-    for i in a_range:
-        try:
-            port = "/dev/{0}{1}".format(portname, i)
-            bluenet_instance.initializeUSB(port)
-            return port
-        except Exception as err:
-            print("coudn't find '/dev/ttyACM{0}', trying next port".format(i))
-            print(err)
-    return None
-
 def sleepAfterUartCommand():
     time.sleep(0.5)
-
 
 def sendEventToCrownstone(eventtype, eventdata):
     """
@@ -40,7 +21,7 @@ def sendEventToCrownstone(eventtype, eventdata):
     payload += Conversion.uint16_to_uint8_array(eventtype)
     payload += eventdata
     uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT,payload).getPacket()
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+    UartEventBus.emit(SystemTopics.uartWriteData, uartPacket)
     sleepAfterUartCommand()
 
 def sendCommandToCrownstone(commandtype, packetcontent):
@@ -52,6 +33,5 @@ def sendCommandToCrownstone(commandtype, packetcontent):
     controlPacket = ControlPacket(commandtype)
     controlPacket.appendByteArray(packetcontent)
     uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
-    # print("sendCommandToCrownstone( type:{0} )".format(commandtype)); print(uartPacket)
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+    UartEventBus.emit(SystemTopics.uartWriteData, uartPacket)
     sleepAfterUartCommand()

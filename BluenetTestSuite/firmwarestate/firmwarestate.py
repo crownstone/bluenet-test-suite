@@ -1,23 +1,26 @@
 import time, inspect, sys
-from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
-
-from BluenetLib.lib.core.uart.UartTypes import UartRxType
-from BluenetLib.lib.topics.SystemTopics import SystemTopics
-
-from BluenetTestSuite.firmwarecontrol.datatransport import initializeUSB
-from BluenetTestSuite.firmwarestate.firmwarestatehistoryentry import FirmwareStateHistoryEntry
 
 import datetime
 import pprint
+import pygame  # used for nice keyboard input when used as stand alone script
 
-import pygame #for nice keyboard input when used as stand alone script
+
+from crownstone_uart import CrownstoneUart
+from crownstone_uart.core.UartEventBus import UartEventBus
+from crownstone_uart.core.uart.UartTypes import UartRxType
+from crownstone_uart.topics.SystemTopics import SystemTopics
+
+
+from BluenetTestSuite.firmwarestate.firmwarestatehistoryentry import FirmwareStateHistoryEntry
+
 
 class FirmwareState:
     """
     Listens to UART over a port and keeps track of any state values logged by the firmware.
     """
     def __init__(self):
-        BluenetEventBus.subscribe(SystemTopics.uartNewPackage, self.parse)
+        self.uartSubscription = UartEventBus.subscribe(SystemTopics.uartNewPackage, self.parse)
+
         # statedict: dict (int -> dict (string -> value) ),
         # thisptr -> valuename -> value
         self.statedict = dict()
@@ -154,17 +157,12 @@ class Main:
     If this file is run as stand alone script, it will output the current state of the firmware.
     """
     def __init__(self):
-        # Create new instance of Bluenet
-        self.bluenet = Bluenet()
+        # Create the uart connection
+        self.uart = CrownstoneUart()
+        self.uart.initialize_usb_sync()
 
         # create FirmwareState instance - this must be constructed after Bluenet().
         self.fwState = FirmwareState()
-
-        # see if we can find a crownstone on one of the ACM busses
-        # note: this is where we could add several FirmwareState objects
-        # (1 per uart bus) whenever we wish to write tests involving several crownstones,
-        # each of them on their own j-link.
-        initializeUSB(self.bluenet, "ttyACM", range(4))
 
         pygame.init()
         self.window = pygame.display.set_mode((400,400))
@@ -172,14 +170,10 @@ class Main:
     # implements 'with' interface to enforce timely destruction even when Bluenet wants
     # to stay alive.
     def __enter__(self):
-        # Set up event listeners
-            return self
+        return self
     
-    def __exit__(self, type, value, traceback):
-        print("goodbye cruel world")
+    def __exit__(self, typ, value, traceback):
         pygame.quit()
-        # BluenetEventBus.unsubscribe(self.subscriptionId)
-        self.bluenet.stop()
 
     def run(self):
         print("firmwarestate up and running")
@@ -197,6 +191,7 @@ class Main:
                         self.fwState.printhistory()
                     if event.key == ord('q')  or event.key == ord('Q') or event.key == pygame.K_ESCAPE:
                         run = False
+
 
 if __name__ == "__main__":
     with Main() as m:

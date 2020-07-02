@@ -2,8 +2,6 @@ import time, inspect, sys
 
 import datetime
 import pprint
-import pygame  # used for nice keyboard input when used as stand alone script
-
 
 from crownstone_uart import CrownstoneUart
 from crownstone_uart.core.UartEventBus import UartEventBus
@@ -13,6 +11,8 @@ from crownstone_uart.topics.SystemTopics import SystemTopics
 
 from BluenetTestSuite.firmwarestate.firmwarestatehistoryentry import FirmwareStateHistoryEntry
 
+import logging
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 class FirmwareState:
     """
@@ -194,5 +194,6 @@ class Main:
 
 
 if __name__ == "__main__":
+    import pygame  # used for nice keyboard input when used as stand alone script
     with Main() as m:
         m.run()

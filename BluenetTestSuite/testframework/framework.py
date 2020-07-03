@@ -32,6 +32,7 @@ class TestFramework:
 
     # __exit__ is part of the 'with' interface. It will be used to tear down the test environment.
     def __exit__(self, type, value, traceback):
+        print("FirmwareState exit: stopping uart")
         self.uart.stop()
         pass
 

@@ -17,6 +17,10 @@ class TestScenario:
         self.currenttime = None
         self.name = name
 
+        # when self.verbose is true, any addEvent call will be added in verbose mode,
+        # unless overwritten by the verbose parameter of the addEvent function
+        self.verbose = False
+
     def clearTime(self):
         self.currenttime = None
 
@@ -37,13 +41,15 @@ class TestScenario:
         """
         self.addEvent(bind(time.sleep, seconds))
 
-    def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
+    def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=None):
+        verbose = self.verbose if verbose is None else verbose
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expect, self.fw, classname, variablename, expectedvalue, formattederrormessage, verbose)
         )
 
-    def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=False):
+    def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=None):
+        verbose = self.verbose if verbose is None else verbose
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expectAny, self.fw, classname, variablename, expectedvalues, formattederrormessage, verbose)
@@ -77,7 +83,7 @@ class TestScenario:
                 else:
                     return "{1} at setup time: {0}".format(response, self.name)
 
-            t = previous_t
+            previous_t = t
 
         return TestFramework.success(self.name)
 

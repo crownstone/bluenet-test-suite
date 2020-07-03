@@ -1,5 +1,5 @@
-from BluenetLib.lib.packets.behaviour.SwitchBehaviour import SwitchBehaviour
-from BluenetLib.lib.packets.behaviour.TwilightBehaviour import TwilightBehaviour
+from crownstone_core.packets.behaviour.SwitchBehaviour import SwitchBehaviour
+from crownstone_core.packets.behaviour.TwilightBehaviour import TwilightBehaviour
 
 from BluenetTestSuite.firmwarecontrol.utils import *
 

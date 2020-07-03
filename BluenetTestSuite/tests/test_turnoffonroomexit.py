@@ -56,6 +56,15 @@ test_room_id = 1
 test_scene_intensity = 50
 test_behaviour_intensity = 80
 
+events_description_1 = "scene, enter, exit, time out"
+events_description_2 = "enter, scene, exit, time out"
+events_description_3 = "enter, exit, scene, time out"
+events_description_4 = "enter, exit, time out, scene"
+
+behaviourstore_description_A = "empty"
+behaviourstore_description_B = "SwitchBehaviour: all day, while in room, value 80"
+behaviourstore_description_C = "SwitchBehaviour: all day, while not in room, value 0"
+
 
 # ----- behaviour store setups -----
 def clean_setup():
@@ -73,7 +82,7 @@ def setupB():
     switchbehaviour.setTimeAllday()
     switchbehaviour.setDimPercentage(test_behaviour_intensity)
     switchbehaviour.setPresenceSomebodyInLocations(
-               test_room_id, presence_grace_period_sec)
+               [test_room_id], presence_grace_period_sec)
 
     sendBehaviour(0, switchbehaviour)
 
@@ -84,7 +93,7 @@ def setupC():
     switchbehaviour.setTimeAllday()
     switchbehaviour.setDimPercentage(0)
     switchbehaviour.setPresenceNobodyInLocations(
-                test_room_id, presence_grace_period_sec)
+                [test_room_id], presence_grace_period_sec)
 
     sendBehaviour(0, switchbehaviour)
 
@@ -96,9 +105,11 @@ def user_exits():
     pass
 
 def wait_for_presence_time_out():
+    print("wait for presence timeout started ", datetime.datetime.now())
     time.sleep(presence_grace_period_sec +
                presence_handler_time_out_sec +
                precence_time_out_extra_sec)
+    print("wait for presence timeout ended ", datetime.datetime.now())
 
 def set_scene():
     """
@@ -114,7 +125,7 @@ def set_scene():
 #   a - b - c1 - c2
 
 def scenario_A1(FW):
-    scenario = TestScenario(FW, "turn off on room exit A1")
+    scenario = TestScenario(FW, F"turn off on room exit : {events_description_1} {behaviourstore_description_A}")
     scenario.addEvent(setupA)
     scenario.wait(1)
 
@@ -128,19 +139,18 @@ def scenario_A1(FW):
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
 
-
     expect_message = "nothing should change as no behaviours are set"
     scenario.addEvent(user_enters)
+    scenario.addExpect("SwitchAggregator", "behaviourState", "0", expect_message)
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
-
 
     scenario.addEvent(user_exits)
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
 
-
     scenario.addEvent(wait_for_presence_time_out)
+    scenario.addExpect("SwitchAggregator", "behaviourState", "0", expect_message)
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
 
@@ -148,9 +158,11 @@ def scenario_A1(FW):
 
 
 def scenario_B1(FW):
-    scenario = TestScenario(FW, "turn off on room exit A1")
+    scenario = TestScenario(FW, F"turn off on room exit : {events_description_1} {behaviourstore_description_B}")
     scenario.addEvent(setupB)
     scenario.wait(1)
+
+    scenario.verbose = True
 
     # any time will do, but need to be certain a time is set.
     scenario.setTime(8, 0)
@@ -164,23 +176,29 @@ def scenario_B1(FW):
 
     expect_message = "presence behaviour is valid but override value has priority"
     scenario.addEvent(user_enters)
+    scenario.addExpect("SwitchAggregator", "behaviourState", str(test_behaviour_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
 
     expect_message = "presence behaviour still valid because of grace period and presence handler time out"
     scenario.addEvent(user_exits)
+    scenario.addExpect("SwitchAggregator", "behaviourState", str(test_behaviour_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "overrideState", str(test_scene_intensity), expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", str(test_scene_intensity), expect_message)
 
     expect_message = "presence behaviour became inactive, override should reset"
     scenario.addEvent(wait_for_presence_time_out)
+    scenario.addExpect("SwitchAggregator", "behaviourState", "0", expect_message)
     scenario.addExpect("SwitchAggregator", "overrideState", "-1", expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", expect_message)
 
     return scenario
 
 def scenario_C1(FW):
-    scenario = TestScenario(FW, "turn off on room exit A1")
+    """
+    'while not in room: 0%'
+    """
+    scenario = TestScenario(FW, F"turn off on room exit : {events_description_1} {behaviourstore_description_C}")
     scenario.addEvent(setupC)
     scenario.wait(1)
 
@@ -213,9 +231,12 @@ def scenario_C1(FW):
     expect_message = "presence behaviour became inactive, override should reset, "
     expect_message += "behaviourState 0 because of active not-present behaviour"
     scenario.addEvent(wait_for_presence_time_out)
-    scenario.addExpect("SwitchAggregator", "overrideState", "-1", expect_message)
     scenario.addExpect("SwitchAggregator", "behaviourState", "0", expect_message)
+    scenario.addExpect("SwitchAggregator", "overrideState", "-1", expect_message)
     scenario.addExpect("SwitchAggregator", "aggregatedState", "0", expect_message)
+
+    return scenario
+
 # ---- sequence 2) ----
 
 # ---- sequence 3) ----
@@ -235,7 +256,9 @@ def run_all_scenarios(FW):
     result = []
 
     scenarios = [
-        buildScenario(FW),
+        scenario_A1(FW),
+        scenario_B1(FW),
+        scenario_C1(FW),
     ]
 
     for scenario in scenarios:

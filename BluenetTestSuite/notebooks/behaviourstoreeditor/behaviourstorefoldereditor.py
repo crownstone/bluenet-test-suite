@@ -78,7 +78,7 @@ savebutton = Button(
 
 ########################################
 
-fileeditor, file_changed_callback = BehaviourStoreFileEditor()
+fileeditor, reload_store_file_editor = BehaviourStoreFileEditor()
 
 ############################
 #   Callback definitions   #
@@ -87,7 +87,7 @@ fileeditor, file_changed_callback = BehaviourStoreFileEditor()
 def get_current_file():
     return "".join([
         behaviour_store_folder_field.value, "/",
-        filename_for_saving_field.value,
+        fileselector.value if fileselector.value else "defaultname",
         BEHAVIOURSTORE_FILE_EXT
     ])
 
@@ -109,6 +109,11 @@ def reload_file_selector(button=None):
     finally:
         fileselector.disabled=False
 
+def reload_file_editor_from_file_selector():
+    reload_store_file_editor(get_current_file())
+
+def reload_button_click(button):
+    reload_file_editor_from_file_selector()
 
 def create_button_click(button):
     if file_path_invalid():
@@ -123,7 +128,9 @@ def create_button_click(button):
             reload_file_selector()
             fileselector.value=filename_for_saving_field.value  # set value to newly created file
             json.dump(BehaviourStore().__dict__, created_file, indent=4)
-            file_changed_callback(path_and_filename)
+
+    # immediately reload file as well
+    reload_file_editor_from_file_selector()
 
 def delete_button_click(button):
     if file_path_invalid():
@@ -131,21 +138,28 @@ def delete_button_click(button):
             print("file path invalid!")
         return
     try:
-        os.remove(behaviour_store_folder_field.value + "/" +
-                  fileselector.value +
-                  BEHAVIOURSTORE_FILE_EXT
-                  )
+        os.remove(get_current_file())
     except:
         pass
     reload_file_selector()
+
+def on_file_selector_value_update(change):
+    pass
+    # filename_for_saving_field.value = change['new']
 
 ############################
 #    Interaction setup     #
 ############################
 
 loadbutton.on_click(reload_file_selector)
-createbutton.on_click(create_button_click)
+
+reloadbutton.on_click(reload_button_click)
 deletebutton.on_click(delete_button_click)
+
+createbutton.on_click(create_button_click)
+
+# when selecting another value from dropdown, update the write_file name to match
+fileselector.observe(on_file_selector_value_update, 'value')
 
 ############################
 #       Construction       #
@@ -153,12 +167,16 @@ deletebutton.on_click(delete_button_click)
 
 def BehaviourStoreFolderEditor():
     reload_file_selector()
+    if not filename_for_saving_field.value:
+        # if no valid behaviours are found while reloading, the observable will clean out
+        # filename_for_saving_field value too thoroughly. Reset it to default:
+        filename_for_saving_field.value = "new_behaviour_store_0"
 
     return VBox(children=[
             MakeHBox_single([behaviour_store_folder_field, loadbutton], ['95%', '5%']),
             MakeHBox_single([fileselector, reloadbutton, deletebutton], ['90%', '5%', '5%']),
             MakeHBox_single([filename_for_saving_field, savebutton, createbutton], ['90%', '5%', '5%']),
-            fileeditor,
+            MakeHBox_single([fileeditor], ['100%']),
             error_output_field
         ]
     )

@@ -1,8 +1,11 @@
-from ipywidgets import Button, Layout, Label, VBox
+from ipywidgets import Button, Layout, Label, VBox, Text
 
 from behaviourstoreeditor.utils import *
-
 from behaviourstoreeditor.icons import *
+
+from behaviourstoreeditor.behaviourstoreserialisation import *
+
+import json
 
 addbehaviourbutton = reloadbutton = Button(
     tooltip='Add new behaviour to file',
@@ -10,7 +13,6 @@ addbehaviourbutton = reloadbutton = Button(
     icon=icon_create,
     layout=Layout(width='100%')
 )
-
 
 behaviourstorefileeditorheader = MakeHBox_single(
         [
@@ -22,18 +24,40 @@ behaviourstorefileeditorheader = MakeHBox_single(
 
 behaviourstorefileeditorfooter = MakeHBox_single([addbehaviourbutton], ['5%'])
 
-behaviourstorefileeditorcontent = VBox([Button(description=F"hi")])
+behaviourstorefileeditorcontent = MakeHBox_single([Label("content not initialized")], ['100%'])
 
-behaviourstorefileeditor = VBox([
+behaviourstorefileeditor_children = [
         behaviourstorefileeditorheader,
         behaviourstorefileeditorcontent,
         behaviourstorefileeditorfooter
-    ])
+    ]
 
+behaviourstorefileeditor = VBox(children=[], layout=Layout(width='100%'))
+
+def createOnAddBehaviourButtonCallback(filepath):
+    """
+    returns a 1-parameter callback button that will write a new behaviour entry into the given path.
+    No checking implemented yet.
+    """
+    def onAdd(b):
+        with open(filepath,"r+") as json_file:
+            json_data = json.load(json_file)
+            json_data["entries"] += [json.dumps(BehaviourEntry().__dict__)]
+            json_file.seek(0)  # rewind
+            json.dump(json_data, json_file, indent=4)
+            json_file.truncate()
+
+    return onAdd
 
 def BehaviourStoreUpdateContent(filepath):
     # with open... read json extract children.
-    behaviourstorefileeditorcontent.children = [Button(description=F"hi '{filepath}'")]
+    behaviourstorefileeditorcontent.children = [Text(F"loaded: '{filepath}'", layout=Layout(width='100%'))]
+
+    # when first created, the children aren't displayed yet. that will happen on the first
+    # call to this function, hence we set the children of the previously empty VBox.
+    behaviourstorefileeditor.children = behaviourstorefileeditor_children
+
+    addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
 
 def BehaviourStoreFileEditor():
     """

@@ -14,5 +14,7 @@ def MetaDataSummary():
 
     return [indexfield]
 
+# add GUID field?
+
 def MetaDataDetails():
     return []

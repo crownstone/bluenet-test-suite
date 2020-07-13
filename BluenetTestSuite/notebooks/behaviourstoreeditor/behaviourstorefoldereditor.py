@@ -1,9 +1,12 @@
-from ipywidgets import Layout, Text, Button, Select, VBox, Output
+from ipywidgets import Layout, Text, Button, Select, VBox, Output, Label
 
 from behaviourstoreeditor.icons import *
 from behaviourstoreeditor.utils import *
+from behaviourstoreeditor.behaviourstoreserialisation import *
 
-import os
+from behaviourstoreeditor.behaviourstorefileeditor import *
+
+import os, json
 
 
 BEHAVIOURSTORE_FILE_EXT = ".behaviourstore.json"
@@ -28,6 +31,8 @@ loadbutton = Button(
     layout=Layout(width='100%')
 )
 
+########################################
+
 fileselector = Select(
     options=[],
     description='Read file:',
@@ -47,6 +52,8 @@ deletebutton = Button(
     icon=icon_delete,
     layout=Layout(width='100%')
 )
+
+########################################
 
 filename_for_saving_field = Text(
     value="new_file_name",
@@ -69,9 +76,24 @@ savebutton = Button(
     layout=Layout(width='100%')
 )
 
+########################################
+
+fileeditor_header = BehaviourStoreFileEditorHeader()
+fileeditor_content = BehaviourStoreFileEditorContent()
+fileeditor_footer = BehaviourStoreFileEditorFooter()
+
+fileeditor = VBox([fileeditor_header, fileeditor_content, fileeditor_footer])
+
 ############################
 #   Callback definitions   #
 ############################
+
+def get_current_file():
+    return "".join([
+        behaviour_store_folder_field.value, "/",
+        filename_for_saving_field.value,
+        BEHAVIOURSTORE_FILE_EXT
+    ])
 
 def file_path_invalid():
     # check if behaviour_store_folder_field.value is ok
@@ -94,24 +116,21 @@ def reload_file_selector(button=None):
 
 def create_button_click(button):
     if file_path_invalid():
-        with output_field:
+        with error_output_field:
             print("path invalid!")
         return
 
-    path_and_filename = "".join([
-        behaviour_store_folder_field.value, "/",
-        filename_for_saving_field.value,
-        BEHAVIOURSTORE_FILE_EXT
-    ])
+    path_and_filename = get_current_file()
 
     if not os.path.exists(path_and_filename):
-        with open(path_and_filename, 'w'):
+        with open(path_and_filename, 'w') as created_file:
             reload_file_selector()
             fileselector.value=filename_for_saving_field.value  # set value to newly created file
+            json.dump(BehaviourStore().__dict__, created_file, indent=4)
 
 def delete_button_click(button):
     if file_path_invalid():
-        with output_field:
+        with error_output_field:
             print("file path invalid!")
         return
     try:
@@ -135,13 +154,14 @@ deletebutton.on_click(delete_button_click)
 #       Construction       #
 ############################
 
-def BehaviourStoreEditor():
+def BehaviourStoreFolderEditor():
     reload_file_selector()
 
     return VBox(children=[
             MakeHBox_single([behaviour_store_folder_field, loadbutton], ['95%', '5%']),
             MakeHBox_single([fileselector, reloadbutton, deletebutton], ['90%', '5%', '5%']),
             MakeHBox_single([filename_for_saving_field, savebutton, createbutton], ['90%', '5%', '5%']),
+            fileeditor,
             error_output_field
         ]
     )

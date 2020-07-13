@@ -10,7 +10,7 @@ from behaviourstoreeditor.toolbar import *
 
 def BehaviourEntryEditor():
     """
-    Returns HBox for Behaviour with additional meta-operations
+    Returns HBox for Behaviour with additional meta-operations. Concerns exactly one behaviour.
     """
     summary_meta = MetaDataSummary()
     summary_overview, overview_update_callback = BehaviourOverviewSummary()

@@ -78,11 +78,7 @@ savebutton = Button(
 
 ########################################
 
-fileeditor_header = BehaviourStoreFileEditorHeader()
-fileeditor_content = BehaviourStoreFileEditorContent()
-fileeditor_footer = BehaviourStoreFileEditorFooter()
-
-fileeditor = VBox([fileeditor_header, fileeditor_content, fileeditor_footer])
+fileeditor, file_changed_callback = BehaviourStoreFileEditor()
 
 ############################
 #   Callback definitions   #
@@ -127,6 +123,7 @@ def create_button_click(button):
             reload_file_selector()
             fileselector.value=filename_for_saving_field.value  # set value to newly created file
             json.dump(BehaviourStore().__dict__, created_file, indent=4)
+            file_changed_callback(path_and_filename)
 
 def delete_button_click(button):
     if file_path_invalid():

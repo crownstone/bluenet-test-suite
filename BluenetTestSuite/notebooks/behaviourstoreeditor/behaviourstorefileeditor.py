@@ -12,17 +12,31 @@ addbehaviourbutton = reloadbutton = Button(
 )
 
 
-def BehaviourStoreFileEditorHeader():
-    return MakeHBox_single(
+behaviourstorefileeditorheader = MakeHBox_single(
         [
-            MakeHBox_single([Label("Index:")],['100%']),
+            MakeHBox_single([Label("Index:")], ['100%']),
             MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)])
         ],
         ['5%', '90%']
     )
 
-def BehaviourStoreFileEditorFooter():
-    return MakeHBox_single([addbehaviourbutton], ['5%'])
+behaviourstorefileeditorfooter = MakeHBox_single([addbehaviourbutton], ['5%'])
 
-def BehaviourStoreFileEditorContent():
-    return VBox()
+behaviourstorefileeditorcontent = VBox([Button(description=F"hi")])
+
+behaviourstorefileeditor = VBox([
+        behaviourstorefileeditorheader,
+        behaviourstorefileeditorcontent,
+        behaviourstorefileeditorfooter
+    ])
+
+
+def BehaviourStoreUpdateContent(filepath):
+    # with open... read json extract children.
+    behaviourstorefileeditorcontent.children = [Button(description=F"hi '{filepath}'")]
+
+def BehaviourStoreFileEditor():
+    """
+    Returns a widget and an update callback.
+    """
+    return behaviourstorefileeditor, BehaviourStoreUpdateContent

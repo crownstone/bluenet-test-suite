@@ -62,6 +62,8 @@ def BehaviourStoreUpdateContent(filepath):
         # call to this function, hence we set the children of the previously empty VBox.
         behaviourstorefileeditor.children = behaviourstorefileeditor_children
 
+        # need to remove previous click handlers in order to not add stuff to files we opened in the past..
+        addbehaviourbutton._click_handlers.callbacks = []
         addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
 
 def BehaviourStoreFileEditor():

@@ -2,7 +2,7 @@ from ipywidgets import ToggleButton, Layout,Button
 
 from behaviourstoreeditor.icons import *
 
-def ToolbarSummary():
+def ToolbarSummary(behaviour_entry, filepath):
     editbutton = ToggleButton(
         value=False,  # meaning 'collapsed'
         tooltip='Expand',
@@ -14,7 +14,7 @@ def ToolbarSummary():
     return [editbutton]
 
 
-def ToolbarDetails():
+def ToolbarDetails(behaviour_entry, filepath):
     deletebutton = Button(
         tooltip='Delete',
         disabled=False,

@@ -1,7 +1,7 @@
 from ipywidgets import BoundedIntText, Layout
 
 
-def MetaDataSummary():
+def MetaDataSummary(behaviour_entry, filepath):
     indexfield = BoundedIntText(
         value=0,
         min=0,
@@ -16,5 +16,5 @@ def MetaDataSummary():
 
 # add GUID field?
 
-def MetaDataDetails():
+def MetaDataDetails(behaviour_entry, filepath):
     return []

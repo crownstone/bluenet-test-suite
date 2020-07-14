@@ -3,7 +3,7 @@ from ipywidgets import IntRangeSlider, IntSlider, BoundedIntText
 from ipywidgets import Button, ToggleButtons
 from ipywidgets import Checkbox
 
-def BehaviourOverviewSummary():
+def BehaviourOverviewSummary(behaviour_entry, filepath):
     """
     Returns list of widgets for single line description of a behaviour,
     and a callback taking in a behaviour description dict to update its value.
@@ -47,7 +47,7 @@ def BehaviourOverviewSummary():
     return [summarywidget], update_summary
 
 
-def BehaviourOverviewDetails():
+def BehaviourOverviewDetails(behaviour_entry, filepath):
     """
     Returns list of widgets for multi line description of a behaviour
     """

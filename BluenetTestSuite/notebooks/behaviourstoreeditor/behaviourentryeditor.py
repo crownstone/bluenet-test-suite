@@ -2,23 +2,25 @@ from ipywidgets import VBox
 
 from behaviourstoreeditor.utils import *
 from behaviourstoreeditor.icons import *
+from behaviourstoreeditor.behaviourstoreserialisation import *
 
 from behaviourstoreeditor.behaviourentry import *
 from behaviourstoreeditor.entrymetadata import *
 from behaviourstoreeditor.toolbar import *
 
 
-def BehaviourEntryEditor():
+def BehaviourEntryEditor(behaviour_entry, filepath):
     """
-    Returns HBox for Behaviour with additional meta-operations. Concerns exactly one behaviour.
+    Returns HBox for Behaviour with additional meta-operations. Concerns exactly one behaviour entry.
+    behaviour_entry is a BehaviourEntry
     """
-    summary_meta = MetaDataSummary()
-    summary_overview, overview_update_callback = BehaviourOverviewSummary()
-    summary_toolbar = ToolbarSummary()
+    summary_meta = MetaDataSummary(behaviour_entry, filepath)
+    summary_overview, overview_update_callback = BehaviourOverviewSummary(behaviour_entry, filepath)
+    summary_toolbar = ToolbarSummary(behaviour_entry, filepath)
 
-    details_meta = MetaDataDetails()
-    details_overview, overview_get_behaviour_settings_dict = BehaviourOverviewDetails()
-    details_toolbar = ToolbarDetails()
+    details_meta = MetaDataDetails(behaviour_entry, filepath)
+    details_overview, overview_get_behaviour_settings_dict = BehaviourOverviewDetails(behaviour_entry, filepath)
+    details_toolbar = ToolbarDetails(behaviour_entry, filepath)
 
     summary = MakeHBox([summary_meta, summary_overview, summary_toolbar], ['5%', '90%', '5%'])
     details = MakeHBox([details_meta, details_overview, details_toolbar], ['5%', '90%', '5%'])

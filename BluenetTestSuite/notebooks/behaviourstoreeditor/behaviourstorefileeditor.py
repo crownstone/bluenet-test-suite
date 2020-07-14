@@ -31,7 +31,6 @@ behaviourstorefileeditorheader = VBox([
 
 behaviourstorefileeditorfooter = MakeHBox_single([addbehaviourbutton], ['5%'])
 
-# behaviourstorefileeditorcontent = MakeHBox_single([Label("content not initialized", layout=Layout(width='100%'))], ['100%'])
 behaviourstorefileeditorcontent = VBox([Label("content not initialized", layout=Layout(width='100%'))])
 
 behaviourstorefileeditor_children = [
@@ -79,7 +78,7 @@ def BehaviourStoreUpdateContent(filepath):
         try:
             with open(filepath, "r") as json_file:
                 json_data = json.load(json_file)
-                entry_editor_widgets = [BehaviourEntryEditor() for entry in json_data['entries']]
+                entry_editor_widgets = [BehaviourEntryEditor(entry, filepath) for entry in json_data['entries']]
                 behaviourstorefileeditorcontent.children = entry_editor_widgets
         except Exception as e:
             with file_editor_error_output_field:

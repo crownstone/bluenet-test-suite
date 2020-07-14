@@ -23,7 +23,7 @@ def BehaviourEntryEditor():
     summary = MakeHBox([summary_meta, summary_overview, summary_toolbar], ['5%', '90%', '5%'])
     details = MakeHBox([details_meta, details_overview, details_toolbar], ['5%', '90%', '5%'])
 
-    entry_editor = VBox([summary])
+    entry_editor = VBox([summary], layout=Layout(width='100%'))
 
     editbutton = summary_toolbar[0]
 

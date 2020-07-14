@@ -106,14 +106,17 @@ def reload_file_selector(button=None):
     loads file selector options with files having the correct extension found in the current working folder.
     """
     try:
-        read_file_name_widget.options = sorted(
+        next_option_list = sorted(
             [fil[:-len(BEHAVIOURSTORE_FILE_EXT)] for fil in os.listdir(folder_name_widget.value) if
-             fil.endswith(BEHAVIOURSTORE_FILE_EXT)]
-        )
-    except:
+             fil.endswith(BEHAVIOURSTORE_FILE_EXT)])
+
+        read_file_name_widget.options = next_option_list
+
+    except Exception as e:
         read_file_name_widget.disabled = True
         with error_output_field:
             print("Something bad happened while reloading file selector.")
+            print(e)
     finally:
         read_file_name_widget.disabled = False
 
@@ -129,6 +132,7 @@ def create_button_click(button):
     if not path_and_filename:
         with error_output_field:
             print("write file name can't be empty")
+        return
 
     if not os.path.exists(path_and_filename):
         with open(path_and_filename, 'w') as created_file:
@@ -153,7 +157,7 @@ def delete_button_click(button):
     reload_store_file_editor(None)
 
 def on_file_selector_value_update(change):
-    write_file_name_widget.value = change['new']
+    write_file_name_widget.value = change['new'] if change['new'] else ""
 
 ############################
 #    Interaction setup     #

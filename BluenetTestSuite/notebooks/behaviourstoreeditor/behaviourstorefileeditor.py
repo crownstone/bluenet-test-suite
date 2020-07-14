@@ -50,14 +50,19 @@ def createOnAddBehaviourButtonCallback(filepath):
     return onAdd
 
 def BehaviourStoreUpdateContent(filepath):
-    # with open... read json extract children.
-    behaviourstorefileeditorcontent.children = [Text(F"loaded: '{filepath}'", layout=Layout(width='100%'))]
+    if not filepath:
+        # if empty, we clear the store editor.
+        behaviourstorefileeditor.children = []
+        return
+    else:
+        # with open... read json extract children.
+        behaviourstorefileeditorcontent.children = [Text(F"loaded: '{filepath}'", layout=Layout(width='100%'))]
 
-    # when first created, the children aren't displayed yet. that will happen on the first
-    # call to this function, hence we set the children of the previously empty VBox.
-    behaviourstorefileeditor.children = behaviourstorefileeditor_children
+        # when first created, the children aren't displayed yet. that will happen on the first
+        # call to this function, hence we set the children of the previously empty VBox.
+        behaviourstorefileeditor.children = behaviourstorefileeditor_children
 
-    addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
+        addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
 
 def BehaviourStoreFileEditor():
     """

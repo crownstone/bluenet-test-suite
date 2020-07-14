@@ -17,7 +17,7 @@ BEHAVIOURSTORE_FILE_EXT = ".behaviourstore.json"
 
 error_output_field = Output()  # used for error reporting
 
-behaviour_store_folder_field = Text(
+folder_name_widget = Text(
     value=os.getcwd(),
     placeholder=os.getcwd(),
     description='Folder:',
@@ -33,7 +33,7 @@ loadbutton = Button(
 
 ########################################
 
-fileselector = Select(
+read_file_name_widget = Select(
     options=[],
     description='Read file:',
     disabled=True
@@ -55,9 +55,9 @@ deletebutton = Button(
 
 ########################################
 
-filename_for_saving_field = Text(
-    value="new_file_name",
-    placeholder="file_name",
+write_file_name_widget = Text(
+    value=None,
+    placeholder="Write new file name",
     description='Write file:',
     layout=Layout(width='100%')
 )
@@ -84,68 +84,76 @@ fileeditor, reload_store_file_editor = BehaviourStoreFileEditor()
 #   Callback definitions   #
 ############################
 
-def get_current_file():
+def get_current_file(file_name_widget):
+    """
+    This method returns the value of the file_name_widget, with prepended the path
+    from the  and the BEHAVIOURSTORE_FILE_EXT appended.
+
+    Returns None if the widget value evaluates to false in boolean context.
+
+    file_name_widget should be one of [read_file_name_widget, write_file_name_widget].
+    """
+    if not file_name_widget.value:
+        return None
     return "".join([
-        behaviour_store_folder_field.value, "/",
-        fileselector.value if fileselector.value else "defaultname",
+        folder_name_widget.value, "/",
+        file_name_widget.value,
         BEHAVIOURSTORE_FILE_EXT
     ])
 
-def file_path_invalid():
-    # check if behaviour_store_folder_field.value is ok
-    return False
-
 def reload_file_selector(button=None):
-    # load file selector and update current working folder
+    """
+    loads file selector options with files having the correct extension found in the current working folder.
+    """
     try:
-        fileselector.options = sorted(
-            [fil[:-len(BEHAVIOURSTORE_FILE_EXT)] for fil in os.listdir(behaviour_store_folder_field.value) if
-                                fil.endswith(BEHAVIOURSTORE_FILE_EXT)]
+        read_file_name_widget.options = sorted(
+            [fil[:-len(BEHAVIOURSTORE_FILE_EXT)] for fil in os.listdir(folder_name_widget.value) if
+             fil.endswith(BEHAVIOURSTORE_FILE_EXT)]
         )
     except:
-        fileselector.disabled=True
+        read_file_name_widget.disabled = True
         with error_output_field:
-            print("somethng bad happened")
+            print("Something bad happened while reloading file selector.")
     finally:
-        fileselector.disabled=False
+        read_file_name_widget.disabled = False
 
-def reload_file_editor_from_file_selector():
-    reload_store_file_editor(get_current_file())
-
-def reload_button_click(button):
-    reload_file_editor_from_file_selector()
+def reload_button_click(button=None):
+    """
+    Reload the behaviour file editor given the currently selected read file.
+    """
+    reload_store_file_editor(get_current_file(read_file_name_widget))
 
 def create_button_click(button):
-    if file_path_invalid():
-        with error_output_field:
-            print("path invalid!")
-        return
+    path_and_filename = get_current_file(write_file_name_widget)
 
-    path_and_filename = get_current_file()
+    if not path_and_filename:
+        with error_output_field:
+            print("write file name can't be empty")
 
     if not os.path.exists(path_and_filename):
         with open(path_and_filename, 'w') as created_file:
             reload_file_selector()
-            fileselector.value=filename_for_saving_field.value  # set value to newly created file
+            read_file_name_widget.value=write_file_name_widget.value  # set value to newly created file
             json.dump(BehaviourStore().__dict__, created_file, indent=4)
+    else:
+        with error_output_field:
+            print("file already exists, not changing anything")
 
-    # immediately reload file as well
-    reload_file_editor_from_file_selector()
+    reload_button_click()
 
 def delete_button_click(button):
-    if file_path_invalid():
-        with error_output_field:
-            print("file path invalid!")
-        return
     try:
-        os.remove(get_current_file())
+        os.remove(get_current_file(read_file_name_widget))
     except:
-        pass
+        with error_output_field:
+            print("Failed to delete selected file!")
+        return
+
     reload_file_selector()
+    reload_store_file_editor(None)
 
 def on_file_selector_value_update(change):
-    pass
-    # filename_for_saving_field.value = change['new']
+    write_file_name_widget.value = change['new']
 
 ############################
 #    Interaction setup     #
@@ -159,7 +167,7 @@ deletebutton.on_click(delete_button_click)
 createbutton.on_click(create_button_click)
 
 # when selecting another value from dropdown, update the write_file name to match
-fileselector.observe(on_file_selector_value_update, 'value')
+read_file_name_widget.observe(on_file_selector_value_update, 'value')
 
 ############################
 #       Construction       #
@@ -167,15 +175,11 @@ fileselector.observe(on_file_selector_value_update, 'value')
 
 def BehaviourStoreFolderEditor():
     reload_file_selector()
-    if not filename_for_saving_field.value:
-        # if no valid behaviours are found while reloading, the observable will clean out
-        # filename_for_saving_field value too thoroughly. Reset it to default:
-        filename_for_saving_field.value = "new_behaviour_store_0"
 
     return VBox(children=[
-            MakeHBox_single([behaviour_store_folder_field, loadbutton], ['95%', '5%']),
-            MakeHBox_single([fileselector, reloadbutton, deletebutton], ['90%', '5%', '5%']),
-            MakeHBox_single([filename_for_saving_field, savebutton, createbutton], ['90%', '5%', '5%']),
+            MakeHBox_single([folder_name_widget, loadbutton], ['95%', '5%']),
+            MakeHBox_single([read_file_name_widget, reloadbutton, deletebutton], ['90%', '5%', '5%']),
+            MakeHBox_single([write_file_name_widget, savebutton, createbutton], ['90%', '5%', '5%']),
             MakeHBox_single([fileeditor], ['100%']),
             error_output_field
         ]

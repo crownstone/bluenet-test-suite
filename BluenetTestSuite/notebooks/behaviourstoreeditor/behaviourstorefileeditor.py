@@ -31,7 +31,8 @@ behaviourstorefileeditorheader = VBox([
 
 behaviourstorefileeditorfooter = MakeHBox_single([addbehaviourbutton], ['5%'])
 
-behaviourstorefileeditorcontent = MakeHBox_single([Label("content not initialized", layout=Layout(width='100%'))], ['100%'])
+# behaviourstorefileeditorcontent = MakeHBox_single([Label("content not initialized", layout=Layout(width='100%'))], ['100%'])
+behaviourstorefileeditorcontent = VBox([Label("content not initialized", layout=Layout(width='100%'))])
 
 behaviourstorefileeditor_children = [
         behaviourstorefileeditorheader,
@@ -54,6 +55,9 @@ def createOnAddBehaviourButtonCallback(filepath):
             json_file.seek(0)  # rewind
             json.dump(json_data, json_file, indent=4)
             json_file.truncate()
+
+            # append new widget
+            behaviourstorefileeditorcontent.children += (BehaviourEntryEditor(), )
 
     return onAdd
 

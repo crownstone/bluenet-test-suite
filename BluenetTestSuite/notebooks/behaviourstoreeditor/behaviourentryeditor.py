@@ -20,7 +20,7 @@ def BehaviourEntryEditor(behaviour_entry, filepath):
     summary_toolbar = ToolbarSummary(behaviour_entry, filepath)
 
     details_meta = MetaDataDetails(behaviour_entry, filepath)
-    details_overview, get_behaviour_entry_details = BehaviourOverviewDetails(behaviour_entry, filepath)
+    details_overview, get_behaviour_entry_details, set_behaviour_entry_details = BehaviourOverviewDetails(behaviour_entry, filepath)
     details_toolbar = ToolbarDetails(behaviour_entry, filepath)
 
     summary = MakeHBox([summary_meta, summary_overview, summary_toolbar], ['5%', '90%', '5%'])
@@ -75,15 +75,25 @@ def BehaviourEntryEditor(behaviour_entry, filepath):
             json_file.truncate()
 
     def reloadbutton_click(b):
-        pass
+        with open(filepath, "r+") as json_file:
+            store = BehaviourStore(**json.load(json_file))
+
+            try:
+                entry = next(entry for entry in store.entries if entry.guid == behaviour_entry.guid)
+                set_behaviour_entry_details(entry)
+            except StopIteration:
+                # couldn't find any behaviours with the cached guid... what a problem...
+                pass
 
     ### interaction setup
     savebutton.on_click(savebutton_click)
+    reloadbutton.on_click(reloadbutton_click)
     deletebutton.on_click(deletebutton_click)
 
     # register 'on edit button click'
     editbutton.observe(toggle_detail_widgets, 'value')
 
+    # ensure the summary widgets are updated when details change
     for behaviour_edit_widget in details_overview:
         behaviour_edit_widget.observe(update_summary_widget, 'value')
 

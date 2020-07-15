@@ -114,13 +114,17 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     )
 
     ### initial values ###
-    fromfield.value = behaviour_entry.fromfield
-    untilfield.value = behaviour_entry.untilfield
-    fromuntilfield.value = (fromfield.value, untilfield.value)
-    fromuntil_reversed_field.value = behaviour_entry.fromuntil_reversed_field
-    intensityfield.value = behaviour_entry.intensityfield
-    fromuntil_reversed_field.value = behaviour_entry.fromuntil_reversed_field
-    typefield.value = behaviour_entry.typefield
+
+    def set_behaviour_entry(_behaviour_entry):
+        fromfield.value = _behaviour_entry.fromfield
+        untilfield.value = _behaviour_entry.untilfield
+        fromuntilfield.value = (fromfield.value, untilfield.value)
+        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
+        intensityfield.value = _behaviour_entry.intensityfield
+        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
+        typefield.value = _behaviour_entry.typefield
+
+    set_behaviour_entry(behaviour_entry)
 
     ### interaction setup
 
@@ -147,7 +151,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     fromfield.observe(on_from_field_change, names='value')
     untilfield.observe(on_until_field_change, names='value')
 
-    def get_behaviour_settings_dict():
+    def get_behaviour_entry():
         entry = BehaviourEntry()
         entry.guid = behaviour_entry.guid
         entry.fromfield = fromfield.value
@@ -159,5 +163,5 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         return entry
 
     return [fromuntilfield, fromfield, untilfield,
-            intensityfield, fromuntil_reversed_field, typefield], get_behaviour_settings_dict
+            intensityfield, fromuntil_reversed_field, typefield], get_behaviour_entry, set_behaviour_entry
 

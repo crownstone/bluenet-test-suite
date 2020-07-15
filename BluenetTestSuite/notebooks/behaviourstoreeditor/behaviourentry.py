@@ -47,6 +47,9 @@ def BehaviourOverviewSummary(behaviour_entry, filepath):
         summarywidget_middle.style.button_color = active_color if not_reversed else no_color
         summarywidget_right.style.button_color = no_color if not_reversed else active_color
 
+    # update the values before construction finishes
+    update_summary(behaviour_entry)
+
     return [summarywidget], update_summary
 
 

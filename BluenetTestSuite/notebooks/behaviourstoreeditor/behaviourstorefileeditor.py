@@ -55,7 +55,7 @@ def createOnAddBehaviourButtonCallback(filepath):
                 print("adding new editor for:")
                 print(new_behaviour_entry)
 
-            json_data["entries"] += [json.dumps(new_behaviour_entry.__dict__)]
+            json_data["entries"] += [new_behaviour_entry.__dict__]
             json_file.seek(0)  # rewind
             json.dump(json_data, json_file, indent=4)
             json_file.truncate()
@@ -86,7 +86,7 @@ def BehaviourStoreUpdateContent(filepath):
         try:
             with open(filepath, "r") as json_file:
                 json_data = json.load(json_file)
-                entry_editor_widgets = [BehaviourEntryEditor(entry, filepath) for entry in json_data['entries']]
+                entry_editor_widgets = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in json_data['entries']]
                 behaviourstorefileeditorcontent.children = entry_editor_widgets
         except Exception as e:
             with file_editor_error_output_field:

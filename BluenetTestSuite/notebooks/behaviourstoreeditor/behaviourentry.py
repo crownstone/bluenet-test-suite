@@ -3,6 +3,8 @@ from ipywidgets import IntRangeSlider, IntSlider, BoundedIntText
 from ipywidgets import Button, ToggleButtons
 from ipywidgets import Checkbox
 
+from behaviourstoreeditor.behaviourstoreserialisation import *
+
 def BehaviourOverviewSummary(behaviour_entry, filepath):
     """
     Returns list of widgets for single line description of a behaviour,
@@ -26,20 +28,21 @@ def BehaviourOverviewSummary(behaviour_entry, filepath):
 
     summarywidget = HBox([summarywidget_left, summarywidget_middle, summarywidget_right])
 
-    def update_summary(behaviour_settings_dict):
-        relative_min = int(100 * behaviour_settings_dict['from'] / float(24 * 60 * 60))
-        relative_max = int(100 * behaviour_settings_dict['until'] / float(24 * 60 * 60))
+    def update_summary(behaviour_entry):
+        relative_min = int(100 * behaviour_entry.fromfield / float(24 * 60 * 60))
+        relative_max = int(100 * behaviour_entry.untilfield / float(24 * 60 * 60))
         summarywidget_left.layout.width = str(relative_min) + "%"
         summarywidget_middle.layout.width = str(relative_max - relative_min) + "%"
         summarywidget_right.layout.width = str(100 - relative_max) + "%"
 
         summarywidget_middle.description = "{0} ({1}%)".format(
-            behaviour_settings_dict['type'],
-            behaviour_settings_dict['intensity']
+            behaviour_entry.typefield,
+            behaviour_entry.intensityfield
         )
 
-        active_color = color_dict[behaviour_settings_dict['type']]
-        not_reversed = not behaviour_settings_dict['fromuntil_reversed']
+        active_color = color_dict[behaviour_entry.typefield]
+        not_reversed = not behaviour_entry.fromuntil_reversed_field
+
         summarywidget_left.style.button_color = no_color if not_reversed else active_color
         summarywidget_middle.style.button_color = active_color if not_reversed else no_color
         summarywidget_right.style.button_color = no_color if not_reversed else active_color
@@ -140,13 +143,14 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     untilfield.observe(on_until_field_change, names='value')
 
     def get_behaviour_settings_dict():
-        settings = dict()
-        settings['intensity'] = intensityfield.value
-        settings['type'] = typefield.value
-        settings['fromuntil_reversed'] = fromuntil_reversed_field.value
-        settings['from'] = fromfield.value
-        settings['until'] = untilfield.value
-        return settings
+        entry = BehaviourEntry()
+        entry.fromfield = fromfield.value
+        entry.untilfield = untilfield.value
+        entry.intensityfield = intensityfield.value
+        entry.typefield = typefield.value
+        entry.fromuntil_reversed_field = fromuntil_reversed_field.value
+
+        return entry
 
     return [fromuntilfield, fromfield, untilfield,
             intensityfield, fromuntil_reversed_field, typefield], get_behaviour_settings_dict

@@ -1,4 +1,4 @@
-from ipywidgets import BoundedIntText, Layout
+from ipywidgets import BoundedIntText, Layout, Textarea, Label, Text
 
 
 def MetaDataSummary(behaviour_entry, filepath):
@@ -17,4 +17,10 @@ def MetaDataSummary(behaviour_entry, filepath):
 # add GUID field?
 
 def MetaDataDetails(behaviour_entry, filepath):
-    return []
+    guidfield = Text(
+        value=str(behaviour_entry.guid),
+        disabled=True,
+        layout=Layout(width='100%')
+    )
+
+    return [guidfield]

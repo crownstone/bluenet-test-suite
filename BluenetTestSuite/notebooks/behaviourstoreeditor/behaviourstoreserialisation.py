@@ -20,5 +20,8 @@ class BehaviourEntry():
 
         self.guid = uuid.uuid4().hex
         self.index = 0
-        self.fromtime = 9*60*60
-        self.untiltime = 18*60*60
+        self.fromfield = 9*60*60
+        self.untilfield = 18*60*60
+        self.intensityfield = 80
+        self.fromuntil_reversed_field = False
+        self.typefield = 'Switch'

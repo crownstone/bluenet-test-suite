@@ -51,6 +51,8 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     """
     Returns list of widgets for multi line description of a behaviour
     """
+    ### widget setup ###
+
     fromuntilfield = IntRangeSlider(
         value=[9 * 60 * 60, 18 * 60 * 60],
         min=0,
@@ -79,30 +81,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         disabled=False,
     )
 
-    def on_range_field_change(change):
-        fromval, untilval = change['new']
-        fromfield.value = fromval
-        untilfield.value = untilval
-
-    def on_from_field_change(change):
-        prev_from_until = fromuntilfield.value
-        next_from_until = (change['new'], prev_from_until[1])
-
-        if next_from_until[0] <= next_from_until[1]:
-            fromuntilfield.value = next_from_until
-
-    def on_until_field_change(change):
-        prev_from_until = fromuntilfield.value
-        next_from_until = (prev_from_until[0], change['new'])
-
-        if next_from_until[0] <= next_from_until[1]:
-            fromuntilfield.value = next_from_until
-
-    fromuntilfield.observe(on_range_field_change, names='value')
-    fromfield.observe(on_from_field_change, names='value')
-    untilfield.observe(on_until_field_change, names='value')
-
-    intensityfield = IntSlider(
+    intensityfield=IntSlider(
         value=100,
         min=0,
         max=100,
@@ -127,6 +106,38 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         button_style='info',
         layout=Layout(width='100%')
     )
+
+    ### initial values ###
+    fromfield.value = behaviour_entry.fromfield
+    untilfield.value = behaviour_entry.untilfield
+    intensityfield.value = behaviour_entry.intensityfield
+    fromuntil_reversed_field.value = behaviour_entry.fromuntil_reversed_field
+    typefield.value = behaviour_entry.typefield
+
+    ### interaction setup
+
+    def on_range_field_change(change):
+        fromval, untilval = change['new']
+        fromfield.value = fromval
+        untilfield.value = untilval
+
+    def on_from_field_change(change):
+        prev_from_until = fromuntilfield.value
+        next_from_until = (change['new'], prev_from_until[1])
+
+        if next_from_until[0] <= next_from_until[1]:
+            fromuntilfield.value = next_from_until
+
+    def on_until_field_change(change):
+        prev_from_until = fromuntilfield.value
+        next_from_until = (prev_from_until[0], change['new'])
+
+        if next_from_until[0] <= next_from_until[1]:
+            fromuntilfield.value = next_from_until
+
+    fromuntilfield.observe(on_range_field_change, names='value')
+    fromfield.observe(on_from_field_change, names='value')
+    untilfield.observe(on_until_field_change, names='value')
 
     def get_behaviour_settings_dict():
         settings = dict()

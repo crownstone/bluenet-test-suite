@@ -50,13 +50,21 @@ def createOnAddBehaviourButtonCallback(filepath):
     def onAdd(b):
         with open(filepath,"r+") as json_file:
             json_data = json.load(json_file)
-            json_data["entries"] += [json.dumps(BehaviourEntry().__dict__)]
+            new_behaviour_entry = BehaviourEntry()
+            with file_editor_error_output_field:
+                print("adding new editor for:")
+                print(new_behaviour_entry)
+
+            json_data["entries"] += [json.dumps(new_behaviour_entry.__dict__)]
             json_file.seek(0)  # rewind
             json.dump(json_data, json_file, indent=4)
             json_file.truncate()
 
             # append new widget
-            behaviourstorefileeditorcontent.children += (BehaviourEntryEditor(), )
+
+            behaviourstorefileeditorcontent.children += (
+                BehaviourEntryEditor(new_behaviour_entry, filepath),
+            )
 
     return onAdd
 

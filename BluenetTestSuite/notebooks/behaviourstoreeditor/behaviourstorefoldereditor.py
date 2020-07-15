@@ -124,6 +124,8 @@ def reload_button_click(button=None):
     """
     Reload the behaviour file editor given the currently selected read file.
     """
+    with error_output_field:
+        print("reload_button_click called")
     reload_store_file_editor(get_current_file(read_file_name_widget))
 
 def create_button_click(button):

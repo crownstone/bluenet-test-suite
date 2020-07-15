@@ -1,9 +1,5 @@
 import uuid
 
-class BehaviourStore():
-    def __init__(self):
-        self.entries = []
-
 class BehaviourEntry():
     """
     To serialize/deserialize with json:
@@ -25,3 +21,13 @@ class BehaviourEntry():
         self.intensityfield = 80
         self.fromuntil_reversed_field = False
         self.typefield = 'Switch'
+
+
+class BehaviourStore():
+    def __init__(self, **kwargs):
+        if kwargs:
+            self.__dict__ = kwargs
+            self.entries = [BehaviourEntry(**entry) for entry in self.entries]
+            return
+
+        self.entries = []

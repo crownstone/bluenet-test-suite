@@ -16,7 +16,7 @@ def BehaviourOverviewSummary(behaviour_entry, filepath):
         'Twilight': "#DADADA"
     }
 
-    no_color = "#FFFFFF"
+    no_color = 'white'
 
     summarywidget_left = Button(description="", layout=Layout(width='25%'))
     summarywidget_middle = Button(description="uninitialized", layout=Layout(width='50%'))
@@ -116,6 +116,8 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     ### initial values ###
     fromfield.value = behaviour_entry.fromfield
     untilfield.value = behaviour_entry.untilfield
+    fromuntilfield.value = (fromfield.value, untilfield.value)
+    fromuntil_reversed_field.value = behaviour_entry.fromuntil_reversed_field
     intensityfield.value = behaviour_entry.intensityfield
     fromuntil_reversed_field.value = behaviour_entry.fromuntil_reversed_field
     typefield.value = behaviour_entry.typefield
@@ -147,6 +149,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
 
     def get_behaviour_settings_dict():
         entry = BehaviourEntry()
+        entry.guid = behaviour_entry.guid
         entry.fromfield = fromfield.value
         entry.untilfield = untilfield.value
         entry.intensityfield = intensityfield.value

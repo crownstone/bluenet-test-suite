@@ -2,6 +2,9 @@ from ipywidgets import BoundedIntText, Layout, Textarea, Label, Text
 
 
 def MetaDataSummary(behaviour_entry, filepath):
+    """
+    Returns a short summary of the metadata and a getter function that returns the index and guid of the behaviour entry
+    """
     indexfield = BoundedIntText(
         value=0,
         min=0,
@@ -12,7 +15,7 @@ def MetaDataSummary(behaviour_entry, filepath):
         layout=Layout(width='100%')
     )
 
-    return [indexfield]
+    return [indexfield], lambda: {"index": indexfield.value, "guid": behaviour_entry.guid}
 
 # add GUID field?
 

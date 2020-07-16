@@ -76,10 +76,6 @@ savebutton = Button(
     layout=Layout(width='100%')
 )
 
-########################################
-
-fileeditor, reload_store_file_editor = BehaviourStoreFileEditor()
-
 ############################
 #   Callback definitions   #
 ############################
@@ -120,71 +116,88 @@ def reload_file_selector(button=None):
     finally:
         read_file_name_widget.disabled = False
 
-def reload_button_click(button=None):
-    """
-    Reload the behaviour file editor given the currently selected read file.
-    """
-    reload_store_file_editor(get_current_file(read_file_name_widget))
 
-def create_button_click(button):
-    path_and_filename = get_current_file(write_file_name_widget)
+########################################
 
-    if not path_and_filename:
-        with error_output_field:
-            print("write file name can't be empty")
-        return
-
-    if not os.path.exists(path_and_filename):
-        with open(path_and_filename, 'w') as created_file:
-            reload_file_selector()
-            read_file_name_widget.value=write_file_name_widget.value  # set value to newly created file
-            json.dump(BehaviourStore().__dict__, created_file, indent=4)
-    else:
-        with error_output_field:
-            print("file already exists, not changing anything")
-
-    reload_button_click()
-
-def delete_button_click(button):
-    try:
-        os.remove(get_current_file(read_file_name_widget))
-    except:
-        with error_output_field:
-            print("Failed to delete selected file!")
-        return
-
-    reload_file_selector()
-    reload_store_file_editor(None)
-
-def on_file_selector_value_update(change):
-    write_file_name_widget.value = change['new'] if change['new'] else ""
-
-############################
-#    Interaction setup     #
-############################
-
-loadbutton.on_click(reload_file_selector)
-
-reloadbutton.on_click(reload_button_click)
-deletebutton.on_click(delete_button_click)
-
-createbutton.on_click(create_button_click)
-
-# when selecting another value from dropdown, update the write_file name to match
-read_file_name_widget.observe(on_file_selector_value_update, 'value')
 
 ############################
 #       Construction       #
 ############################
 
-def BehaviourStoreFolderEditor():
-    reload_file_selector()
+class BehaviourStoreFolderEditor:
+    def __init__(self):
+        self.folderselectionwidgets = MakeHBox_single([folder_name_widget, loadbutton], ['95%', '5%'])
+        self.readfilenamewidgets = MakeHBox_single([read_file_name_widget, reloadbutton, deletebutton],
+                                                   ['90%', '5%', '5%'])
+        self.writefilenamewidgets = MakeHBox_single([write_file_name_widget, savebutton, createbutton],
+                                                    ['90%', '5%', '5%'])
 
-    return VBox(children=[
-            MakeHBox_single([folder_name_widget, loadbutton], ['95%', '5%']),
-            MakeHBox_single([read_file_name_widget, reloadbutton, deletebutton], ['90%', '5%', '5%']),
-            MakeHBox_single([write_file_name_widget, savebutton, createbutton], ['90%', '5%', '5%']),
-            MakeHBox_single([fileeditor], ['100%']),
+        self.fileeditor,\
+            self.reload_store_file_editor = BehaviourStoreFileEditor()
+
+        # todo: remove once fileditor is a class with a get_widgets() method
+        self.fileeditorwidget = MakeHBox_single([self.fileeditor], ['100%'])
+
+        self.widgets = VBox(children=[
+            self.folderselectionwidgets,
+            self.readfilenamewidgets,
+            self.writefilenamewidgets,
+            self.fileeditorwidget,
             error_output_field
         ]
-    )
+        )
+
+        self.setup_interaction()
+        reload_file_selector()
+
+    def get_widgets(self):
+        return self.widgets
+
+    def reload_button_click(self, button=None):
+        """
+        Reload the behaviour file editor given the currently selected read file.
+        """
+        self.reload_store_file_editor(get_current_file(read_file_name_widget))
+
+    def create_button_click(self, button):
+        path_and_filename = get_current_file(write_file_name_widget)
+
+        if not path_and_filename:
+            with error_output_field:
+                print("write file name can't be empty")
+            return
+
+        if not os.path.exists(path_and_filename):
+            with open(path_and_filename, 'w') as created_file:
+                reload_file_selector()
+                read_file_name_widget.value=write_file_name_widget.value  # set value to newly created file
+                json.dump(BehaviourStore().__dict__, created_file, indent=4)
+        else:
+            with error_output_field:
+                print("file already exists, not changing anything")
+
+        self.reload_button_click()
+
+    def delete_button_click(self, button):
+        try:
+            os.remove(get_current_file(read_file_name_widget))
+        except:
+            with error_output_field:
+                print("Failed to delete selected file!")
+            return
+
+        reload_file_selector()
+        self.reload_store_file_editor(None)
+
+    def on_file_selector_value_update(self, change):
+        write_file_name_widget.value = change['new'] if change['new'] else ""
+
+    def setup_interaction(self):
+        loadbutton.on_click(reload_file_selector)
+        reloadbutton.on_click(lambda x: self.reload_button_click(x))
+        deletebutton.on_click(lambda x: self.delete_button_click(x))
+        createbutton.on_click(lambda x: self.create_button_click(x))
+
+        # when selecting another value from dropdown, update the write_file name to match
+        read_file_name_widget.observe(lambda x: self.on_file_selector_value_update(x), 'value')
+

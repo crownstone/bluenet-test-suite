@@ -39,6 +39,7 @@ def BehaviourOverviewSummary(behaviour_entry, filepath):
             behaviour_entry.typefield,
             behaviour_entry.intensityfield
         )
+        summarywidget_middle.tooltip = summarywidget_middle.description
 
         active_color = color_dict[behaviour_entry.typefield]
         not_reversed = not behaviour_entry.fromuntil_reversed_field

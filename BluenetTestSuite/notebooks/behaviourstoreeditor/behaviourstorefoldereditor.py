@@ -17,7 +17,7 @@ class BehaviourStoreFolderEditor:
         self.setup_folder_name_widgets()
         self.setup_read_file_name_widgets()
         self.setup_write_file_name_widgets()
-        self.setup_file_editor_widget()
+        self.fileeditor = BehaviourStoreFileEditor()
         self.setup_main_widget()
         self.setup_interaction()
         self.reload_file_selector()
@@ -92,9 +92,6 @@ class BehaviourStoreFolderEditor:
                                                      self.savebutton,
                                                      self.createbutton],
                                                     ['90%', '5%', '5%'])
-
-    def setup_file_editor_widget(self):
-        self.fileeditor = BehaviourStoreFileEditor()
 
     def setup_main_widget(self):
         self.main_widget = VBox(children=[

@@ -51,6 +51,8 @@ class BehaviourStoreFileEditor:
 
         self.main_widget = MakeHBox_single([self.behaviourstorefileeditor], ['100%'])
 
+        self.entryeditors = []
+
     def get_widgets(self):
         return self.main_widget
 
@@ -72,11 +74,14 @@ class BehaviourStoreFileEditor:
             try:
                 with open(filepath, "r") as json_file:
                     json_data = json.load(json_file)
-                    entry_editor_widgets = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in
+                    self.entryeditors = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in
                                             json_data['entries']]
-                    self.behaviourstorefileeditorcontent.children = entry_editor_widgets
+                    self.behaviourstorefileeditorcontent.children = [entryeditor.get_widgets() for entryeditor in self.entryeditors]
+                    # entry_editor_widgets = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in
+                    #                         json_data['entries']]
+                    # self.behaviourstorefileeditorcontent.children = entry_editor_widgets
             except Exception as e:
-                with file_editor_error_output_field:
+                with self.file_editor_error_output_field:
                     print("failed reading json file")
                     print(e)
 

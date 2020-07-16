@@ -63,7 +63,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         value=[9 * 60 * 60, 18 * 60 * 60],
         min=0,
         max=24 * 60 * 60,
-        step=5*60,
+        step=15*60,
         disabled=False,
         orientation='horizontal',
         readout=False,

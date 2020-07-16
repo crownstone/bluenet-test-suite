@@ -51,9 +51,6 @@ def createOnAddBehaviourButtonCallback(filepath):
         with open(filepath,"r+") as json_file:
             json_data = json.load(json_file)
             new_behaviour_entry = BehaviourEntry()
-            with file_editor_error_output_field:
-                print("adding new editor for:")
-                print(new_behaviour_entry)
 
             json_data["entries"] += [new_behaviour_entry.__dict__]
             json_file.seek(0)  # rewind

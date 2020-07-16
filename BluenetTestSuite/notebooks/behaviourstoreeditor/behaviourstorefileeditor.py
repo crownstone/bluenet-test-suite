@@ -42,30 +42,6 @@ behaviourstorefileeditor_children = [
 
 behaviourstorefileeditor = VBox(children=[], layout=Layout(width='100%'))
 
-def createOnAddBehaviourButtonCallback(filepath):
-    """
-    returns a 1-parameter callback button that will write a new behaviour entry into the given path.
-    No checking implemented yet.
-    """
-    def onAdd(b):
-        with open(filepath,"r+") as json_file:
-            json_data = json.load(json_file)
-            new_behaviour_entry = BehaviourEntry()
-
-            json_data["entries"] += [new_behaviour_entry.__dict__]
-            json_file.seek(0)  # rewind
-            json.dump(json_data, json_file, indent=4)
-            json_file.truncate()
-
-            # append new widget
-
-            behaviourstorefileeditorcontent.children += (
-                BehaviourEntryEditor(new_behaviour_entry, filepath),
-            )
-
-    return onAdd
-
-
 class BehaviourStoreFileEditor:
     """
     Returns a widget and an update callback.
@@ -110,4 +86,28 @@ class BehaviourStoreFileEditor:
 
             # need to remove previous click handlers in order to not add stuff to files we opened in the past..
             addbehaviourbutton._click_handlers.callbacks = []
-            addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
+            addbehaviourbutton.on_click(self.createOnAddBehaviourButtonCallback(filepath))
+
+    def createOnAddBehaviourButtonCallback(self, filepath):
+        """
+        returns a 1-parameter callback button that will write a new behaviour entry into the given path.
+        No checking implemented yet.
+        """
+
+        def onAdd(b):
+            with open(filepath, "r+") as json_file:
+                json_data = json.load(json_file)
+                new_behaviour_entry = BehaviourEntry()
+
+                json_data["entries"] += [new_behaviour_entry.__dict__]
+                json_file.seek(0)  # rewind
+                json.dump(json_data, json_file, indent=4)
+                json_file.truncate()
+
+                # append new widget
+
+                behaviourstorefileeditorcontent.children += (
+                    BehaviourEntryEditor(new_behaviour_entry, filepath),
+                )
+
+        return onAdd

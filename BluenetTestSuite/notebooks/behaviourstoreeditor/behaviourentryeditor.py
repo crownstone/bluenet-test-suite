@@ -97,6 +97,4 @@ def BehaviourEntryEditor(behaviour_entry, filepath):
     for behaviour_edit_widget in details_overview:
         behaviour_edit_widget.observe(update_summary_widget, 'value')
 
-
-
     return entry_editor

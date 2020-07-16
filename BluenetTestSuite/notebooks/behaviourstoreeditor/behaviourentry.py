@@ -1,4 +1,4 @@
-from ipywidgets import Layout, HBox
+from ipywidgets import Layout, HBox, Label
 from ipywidgets import IntRangeSlider, IntSlider, BoundedIntText
 from ipywidgets import Button, ToggleButtons
 from ipywidgets import Checkbox
@@ -63,7 +63,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         value=[9 * 60 * 60, 18 * 60 * 60],
         min=0,
         max=24 * 60 * 60,
-        step=60,
+        step=5*60,
         disabled=False,
         orientation='horizontal',
         readout=False,
@@ -76,16 +76,22 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         min=0,
         max=24 * 60 * 60,
         description='From:',
+        placeholder="seconds since midnight",
         disabled=False,
     )
+
+    fromfieldlabel = Label()
 
     untilfield = BoundedIntText(
         value=18 * 60 * 60,
         min=0,
         max=24 * 60 * 60,
         description='Until:',
+        placeholder="seconds since midnight",
         disabled=False,
     )
+
+    untilfieldlabel = Label()
 
     intensityfield=IntSlider(
         value=100,
@@ -113,20 +119,13 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
         layout=Layout(width='100%')
     )
 
-    ### initial values ###
-
-    def set_behaviour_entry(_behaviour_entry):
-        fromfield.value = _behaviour_entry.fromfield
-        untilfield.value = _behaviour_entry.untilfield
-        fromuntilfield.value = (fromfield.value, untilfield.value)
-        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
-        intensityfield.value = _behaviour_entry.intensityfield
-        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
-        typefield.value = _behaviour_entry.typefield
-
-    set_behaviour_entry(behaviour_entry)
-
     ### interaction setup
+
+    def update_time_field_label(time_widg, label_widg):
+        label_widg.value = "{0:02}:{1:02}h".format(
+            int(time_widg.value // (60*60)),
+            int((time_widg.value % (60*60)) // 60)
+        )
 
     def on_range_field_change(change):
         fromval, untilval = change['new']
@@ -136,6 +135,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     def on_from_field_change(change):
         prev_from_until = fromuntilfield.value
         next_from_until = (change['new'], prev_from_until[1])
+        update_time_field_label(fromfield, fromfieldlabel)
 
         if next_from_until[0] <= next_from_until[1]:
             fromuntilfield.value = next_from_until
@@ -143,6 +143,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     def on_until_field_change(change):
         prev_from_until = fromuntilfield.value
         next_from_until = (prev_from_until[0], change['new'])
+        update_time_field_label(untilfield, untilfieldlabel)
 
         if next_from_until[0] <= next_from_until[1]:
             fromuntilfield.value = next_from_until
@@ -162,6 +163,27 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
 
         return entry
 
-    return [fromuntilfield, fromfield, untilfield,
-            intensityfield, fromuntil_reversed_field, typefield], get_behaviour_entry, set_behaviour_entry
+    ### initial values ###
 
+    def set_behaviour_entry(_behaviour_entry):
+        fromfield.value = _behaviour_entry.fromfield
+        untilfield.value = _behaviour_entry.untilfield
+        update_time_field_label(fromfield, fromfieldlabel)
+        update_time_field_label(untilfield, untilfieldlabel)
+
+        fromuntilfield.value = (fromfield.value, untilfield.value)
+        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
+        intensityfield.value = _behaviour_entry.intensityfield
+        fromuntil_reversed_field.value = _behaviour_entry.fromuntil_reversed_field
+        typefield.value = _behaviour_entry.typefield
+
+    set_behaviour_entry(behaviour_entry)
+
+    return [
+        fromuntilfield,
+        HBox([fromfield, fromfieldlabel]),
+        HBox([untilfield, untilfieldlabel]),
+        intensityfield,
+        fromuntil_reversed_field,
+        typefield
+    ], get_behaviour_entry, set_behaviour_entry

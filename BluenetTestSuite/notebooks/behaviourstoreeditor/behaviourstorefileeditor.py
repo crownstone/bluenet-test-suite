@@ -65,43 +65,49 @@ def createOnAddBehaviourButtonCallback(filepath):
 
     return onAdd
 
-def BehaviourStoreUpdateContent(filepath):
-    if not filepath:
-        # if empty, we clear the store editor.
-        behaviourstorefileeditor.children = []
-        return
-    else:
-        ### header
-        behaviourstorefileeditorheader.children = [
-            MakeHBox_single([Label("Current file:", layout=Layout(width='100%')),
-                             Text(F"{filepath}", layout=Layout(width='100%'), disabled=True)],
-                            ['10', '90%']),
-            behaviourstorefileeditorlegend
-        ]
 
-        ### content
-        try:
-            with open(filepath, "r") as json_file:
-                json_data = json.load(json_file)
-                entry_editor_widgets = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in json_data['entries']]
-                behaviourstorefileeditorcontent.children = entry_editor_widgets
-        except Exception as e:
-            with file_editor_error_output_field:
-                print("failed reading json file")
-                print(e)
-
-        # when first created, the children aren't displayed yet. that will happen on the first
-        # call to this function, hence we set the children of the previously empty VBox.
-        behaviourstorefileeditor.children = behaviourstorefileeditor_children
-
-        ### footer
-
-        # need to remove previous click handlers in order to not add stuff to files we opened in the past..
-        addbehaviourbutton._click_handlers.callbacks = []
-        addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))
-
-def BehaviourStoreFileEditor():
+class BehaviourStoreFileEditor:
     """
     Returns a widget and an update callback.
     """
-    return behaviourstorefileeditor, BehaviourStoreUpdateContent
+    def __init__(self):
+        self.main_widget = behaviourstorefileeditor
+
+    def get_widgets(self):
+        return self.main_widget
+
+    def update_content(self, filepath):
+        if not filepath:
+            # if empty, we clear the store editor.
+            behaviourstorefileeditor.children = []
+            return
+        else:
+            ### header
+            behaviourstorefileeditorheader.children = [
+                MakeHBox_single([Label("Current file:", layout=Layout(width='100%')),
+                                 Text(F"{filepath}", layout=Layout(width='100%'), disabled=True)],
+                                ['10', '90%']),
+                behaviourstorefileeditorlegend
+            ]
+
+            ### content
+            try:
+                with open(filepath, "r") as json_file:
+                    json_data = json.load(json_file)
+                    entry_editor_widgets = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in
+                                            json_data['entries']]
+                    behaviourstorefileeditorcontent.children = entry_editor_widgets
+            except Exception as e:
+                with file_editor_error_output_field:
+                    print("failed reading json file")
+                    print(e)
+
+            # when first created, the children aren't displayed yet. that will happen on the first
+            # call to this function, hence we set the children of the previously empty VBox.
+            behaviourstorefileeditor.children = behaviourstorefileeditor_children
+
+            ### footer
+
+            # need to remove previous click handlers in order to not add stuff to files we opened in the past..
+            addbehaviourbutton._click_handlers.callbacks = []
+            addbehaviourbutton.on_click(createOnAddBehaviourButtonCallback(filepath))

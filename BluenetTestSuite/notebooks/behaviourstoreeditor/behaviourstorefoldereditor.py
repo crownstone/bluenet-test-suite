@@ -95,11 +95,13 @@ class BehaviourStoreFolderEditor:
 
     def setup_file_editor_widget(self):
         # todo: remove once fileditor is a class with a get_widgets() method
-        self.fileeditor, self.reload_store_file_editor = BehaviourStoreFileEditor()
-        self.fileeditorwidget = MakeHBox_single([self.fileeditor], ['100%'])
+
+        self.fileeditor = BehaviourStoreFileEditor()
+        self.reload_store_file_editor = lambda x: self.fileeditor.update_content(x)
+        self.fileeditorwidget = MakeHBox_single([self.fileeditor.get_widgets()], ['100%'])
 
     def setup_main_widget(self):
-        self.widgets = VBox(children=[
+        self.main_widget = VBox(children=[
             self.folderselectionwidgets,
             self.readfilenamewidgets,
             self.writefilenamewidgets,
@@ -124,7 +126,7 @@ class BehaviourStoreFolderEditor:
         """
         Returns the 'top level' widget so that it can be embedded into another one or displayed in a cell.
         """
-        return self.widgets
+        return self.main_widget
 
     def get_current_file(self, file_name_widget):
         """

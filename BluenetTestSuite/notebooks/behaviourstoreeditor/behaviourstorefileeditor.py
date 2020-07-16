@@ -71,7 +71,7 @@ class BehaviourStoreFileEditor:
     Returns a widget and an update callback.
     """
     def __init__(self):
-        self.main_widget = behaviourstorefileeditor
+        self.main_widget = MakeHBox_single([behaviourstorefileeditor], ['100%'])
 
     def get_widgets(self):
         return self.main_widget

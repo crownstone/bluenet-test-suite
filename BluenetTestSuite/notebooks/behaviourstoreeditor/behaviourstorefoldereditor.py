@@ -94,18 +94,14 @@ class BehaviourStoreFolderEditor:
                                                     ['90%', '5%', '5%'])
 
     def setup_file_editor_widget(self):
-        # todo: remove once fileditor is a class with a get_widgets() method
-
         self.fileeditor = BehaviourStoreFileEditor()
-        self.reload_store_file_editor = lambda x: self.fileeditor.update_content(x)
-        self.fileeditorwidget = MakeHBox_single([self.fileeditor.get_widgets()], ['100%'])
 
     def setup_main_widget(self):
         self.main_widget = VBox(children=[
             self.folderselectionwidgets,
             self.readfilenamewidgets,
             self.writefilenamewidgets,
-            self.fileeditorwidget,
+            self.fileeditor.get_widgets(),
             self.error_output_field
         ]
         )
@@ -168,7 +164,7 @@ class BehaviourStoreFolderEditor:
         """
         Reload the behaviour file editor given the currently selected read file.
         """
-        self.reload_store_file_editor(self.get_current_file(self.read_file_name_widget))
+        self.fileeditor.update_content(self.get_current_file(self.read_file_name_widget))
 
     def create_button_click(self, button):
         path_and_filename = self.get_current_file(self.write_file_name_widget)
@@ -198,7 +194,7 @@ class BehaviourStoreFolderEditor:
             return
 
         self.reload_file_selector()
-        self.reload_store_file_editor(None)
+        self.fileeditor.update_content(None)
 
     def save_button_click(self, button):
         pass

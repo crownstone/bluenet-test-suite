@@ -36,16 +36,18 @@ class BehaviourEntryEditor:
             self.set_behaviour_entry_details = BehaviourOverviewDetails(behaviour_entry, filepath)
         self.details_toolbar = ToolbarDetails(behaviour_entry, filepath)
 
-        self.summary = MakeHBox([summary_meta, summary_overview, summary_toolbar], ['5%', '90%', '5%'])
-        self.details = MakeHBox([details_meta, details_overview, details_toolbar], ['5%', '90%', '5%'])
+        self.summary = MakeHBox([self.summary_meta, self.summary_overview, self.summary_toolbar], ['5%', '90%', '5%'])
+        self.details = MakeHBox([self.details_meta, self.details_overview, self.details_toolbar], ['5%', '90%', '5%'])
 
-        self.entry_editor = VBox([summary], layout=Layout(width='100%'))
+        self.entry_editor = VBox([self.summary], layout=Layout(width='100%'))
 
         # todo: remove these local variables once the toolbar is a class object with nice names.
-        self.editbutton = summary_toolbar[0]
-        self.savebutton = details_toolbar[0]
-        self.reloadbutton = details_toolbar[1]
-        self.deletebutton = details_toolbar[2]
+        self.editbutton = self.summary_toolbar[0]
+        self.savebutton = self.details_toolbar[0]
+        self.reloadbutton = self.details_toolbar[1]
+        self.deletebutton = self.details_toolbar[2]
+
+        self.setup_interaction()
 
     ### interaction callbacks
 

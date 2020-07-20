@@ -113,6 +113,16 @@ class BehaviourStoreFileEditor:
         ### update file path.
         self.current_filepath = filepath
 
+    def save_all_entry_changes(self, filepath):
+        if not filepath:
+            return
+        with self.file_editor_error_output_field:
+            print(F"saving all entry changes to {filepath}")
+        with open(filepath, "w") as json_file:
+            store = BehaviourStore()
+            store.entries = [(entry_editor.get_behaviour_entry()) for entry_editor in self.entryeditors]
+            json.dump(store, json_file, indent=4, default=lambda x: x.__dict__)
+
     def update_file_editor(self, filepath):
         """
         change as little as possible: only reload widgets that have changed and delete widgets that have disappeared
@@ -120,7 +130,7 @@ class BehaviourStoreFileEditor:
         with self.file_editor_error_output_field:
             print("updating file editor")
 
-        # todo: this is quite brutal and collapses all the windows...
+        # todo: this is quite brutal and collapses all the entry editors...
         self.create_file_editor(filepath)
         # try:
         #     with open(filepath, "r") as json_file:
@@ -147,7 +157,8 @@ class BehaviourStoreFileEditor:
             json_file.truncate()
 
             # append new widget
+            self.entryeditors += [BehaviourEntryEditor(new_behaviour_entry, filepath)]
             self.behaviourstorefileeditorcontent.children += (
-                BehaviourEntryEditor(new_behaviour_entry, filepath),
+                self.entryeditors[-1].get_widgets(),
             )
 

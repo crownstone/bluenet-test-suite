@@ -111,6 +111,7 @@ class BehaviourStoreFolderEditor:
         self.reloadbutton.on_click(lambda x: self.reload_button_click(x))
         self.deletebutton.on_click(lambda x: self.delete_button_click(x))
         self.createbutton.on_click(lambda x: self.create_button_click(x))
+        self.savebutton.on_click(lambda x: self.save_button_click(x))
 
         # when selecting another value from dropdown, update the write_file name to match
         self.read_file_name_widget.observe(lambda x: self.on_file_selector_value_update(x), 'value')
@@ -194,7 +195,8 @@ class BehaviourStoreFolderEditor:
         self.fileeditor.update_content(None)
 
     def save_button_click(self, button):
-        pass
+        if self.fileeditor:
+            self.fileeditor.save_all_entry_changes(self.get_current_file(self.write_file_name_widget))
 
     def on_file_selector_value_update(self, change):
         self.write_file_name_widget.value = change['new'] if change['new'] else ""

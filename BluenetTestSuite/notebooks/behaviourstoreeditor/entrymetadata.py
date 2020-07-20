@@ -6,7 +6,7 @@ def MetaDataSummary(behaviour_entry, filepath):
     Returns a short summary of the metadata and a getter function that returns the index and guid of the behaviour entry
     """
     indexfield = BoundedIntText(
-        value=0,
+        value=behaviour_entry.index,
         min=0,
         max=49,
         step=1,

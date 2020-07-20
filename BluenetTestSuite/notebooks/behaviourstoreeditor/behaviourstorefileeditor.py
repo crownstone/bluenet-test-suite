@@ -151,6 +151,11 @@ class BehaviourStoreFileEditor:
             json_data = json.load(json_file)
             new_behaviour_entry = BehaviourEntry()
 
+            # get available index
+            indices = sorted([editor.get_behaviour_entry().index for editor in self.entryeditors])
+            while new_behaviour_entry.index in indices:
+                new_behaviour_entry.index += 1
+
             json_data["entries"] += [new_behaviour_entry.__dict__]
             json_file.seek(0)  # rewind
             json.dump(json_data, json_file, indent=4)

@@ -20,7 +20,7 @@ class ScenarioFileEditor:
 
         self.behaviourstorefileeditorlegend = MakeHBox_single(
             [
-                MakeHBox_single([Label("Time")], ['100%']),
+                MakeHBox_single([Label("Time:")], ['100%']),
                 MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)])
             ],
             ['5%', '90%']

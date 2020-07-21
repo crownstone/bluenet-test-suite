@@ -10,8 +10,8 @@ class ScenarioEvent():
             return
 
         self.guid = uuid.uuid4().hex
-        self.time = 0
-        self.commandname = 80
+        self.time = None
+        self.commandname = "wait"
         self.arguments = []
 
 

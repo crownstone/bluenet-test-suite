@@ -1,7 +1,7 @@
 from ipywidgets import Button, Layout, Label, VBox, Text, Output
 
-from behaviourstoreeditor.utils import *
-from behaviourstoreeditor.icons import *
+from utils import *
+from icons import *
 
 from behaviourstoreeditor.behaviourentryeditor import *
 from behaviourstoreeditor.behaviourstoreserialisation import *
@@ -113,7 +113,10 @@ class BehaviourStoreFileEditor:
         ### update file path.
         self.current_filepath = filepath
 
-    def save_all_entry_changes(self, filepath):
+    def save_all(self, filepath):
+        """
+        Saves all changes to the file at location 'filepath'
+        """
         if not filepath:
             return
         with self.file_editor_error_output_field:

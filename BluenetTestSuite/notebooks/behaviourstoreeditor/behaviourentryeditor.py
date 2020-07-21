@@ -1,7 +1,7 @@
 from ipywidgets import VBox
 
-from behaviourstoreeditor.utils import *
-from behaviourstoreeditor.icons import *
+from utils import *
+from icons import *
 from behaviourstoreeditor.behaviourstoreserialisation import *
 
 from behaviourstoreeditor.behaviourentry import *

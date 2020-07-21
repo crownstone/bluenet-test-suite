@@ -1,7 +1,7 @@
 from ipywidgets import Layout, Text, Button, Select, VBox, Output, Label
 
-from behaviourstoreeditor.icons import *
-from behaviourstoreeditor.utils import *
+from icons import *
+from utils import *
 from behaviourstoreeditor.behaviourstoreserialisation import *
 
 from behaviourstoreeditor.behaviourstorefileeditor import *
@@ -196,7 +196,7 @@ class BehaviourStoreFolderEditor:
 
     def save_button_click(self, button):
         if self.fileeditor:
-            self.fileeditor.save_all_entry_changes(self.get_current_file(self.write_file_name_widget))
+            self.fileeditor.save_all(self.get_current_file(self.write_file_name_widget))
 
     def on_file_selector_value_update(self, change):
         self.write_file_name_widget.value = change['new'] if change['new'] else ""

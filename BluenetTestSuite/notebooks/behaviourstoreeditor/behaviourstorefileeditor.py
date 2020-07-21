@@ -11,9 +11,6 @@ import json
 
 
 class BehaviourStoreFileEditor:
-    """
-    Returns a widget and an update callback.
-    """
     def __init__(self):
         self.file_editor_error_output_field = Output()  # used for error reporting
 
@@ -97,7 +94,6 @@ class BehaviourStoreFileEditor:
                 print("failed reading json file")
                 print(e)
 
-        # todo: add entry editor delete button click handler that implements removal of the entry editor widget group and make sure that is the last thing that will be called
         for entryeditor in self.entryeditors:
                 entryeditor.deletebutton.on_click(lambda x: self.update_content(filepath))
 
@@ -108,23 +104,10 @@ class BehaviourStoreFileEditor:
         ### footer
         # need to remove previous click handlers in order to not add stuff to files we opened in the past..
         self.addbehaviourbutton._click_handlers.callbacks = []
-        self.addbehaviourbutton.on_click(lambda x: self.addbehaviourbutton_click(filepath))
+        self.addbehaviourbutton.on_click(lambda x: self.addbehaviour(filepath))
 
         ### update file path.
         self.current_filepath = filepath
-
-    def save_all(self, filepath):
-        """
-        Saves all changes to the file at location 'filepath'
-        """
-        if not filepath:
-            return
-        with self.file_editor_error_output_field:
-            print(F"saving all entry changes to {filepath}")
-        with open(filepath, "w") as json_file:
-            store = BehaviourStore()
-            store.entries = [(entry_editor.get_behaviour_entry()) for entry_editor in self.entryeditors]
-            json.dump(store, json_file, indent=4, default=lambda x: x.__dict__)
 
     def update_file_editor(self, filepath):
         """
@@ -142,10 +125,23 @@ class BehaviourStoreFileEditor:
         #     with self.file_editor_error_output_field:
         #         print("failed updating")
 
+    def save_all(self, filepath):
+        """
+        Saves all changes to the file at location 'filepath'
+        """
+        if not filepath:
+            return
+        with self.file_editor_error_output_field:
+            print(F"saving all entry changes to {filepath}")
+        with open(filepath, "w") as json_file:
+            store = BehaviourStore()
+            store.entries = [(entry_editor.get_behaviour_entry()) for entry_editor in self.entryeditors]
+            json.dump(store, json_file, indent=4, default=lambda x: x.__dict__)
+
     def update_editor_content_widgets(self):
         self.behaviourstorefileeditorcontent.children = [entryeditor.get_widgets() for entryeditor in self.entryeditors]
 
-    def addbehaviourbutton_click(self, filepath):
+    def addbehaviour(self, filepath):
         """
         Callback that will write a new behaviour entry into the given path.
         No checking implemented yet.

@@ -12,7 +12,7 @@ class ScenarioEvent():
         self.guid = uuid.uuid4().hex
         self.time = None
         self.commandname = "wait"
-        self.arguments = []
+        self.arguments = ""
 
 
 class ScenarioDescription:

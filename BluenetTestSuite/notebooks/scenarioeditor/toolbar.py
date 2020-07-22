@@ -31,5 +31,5 @@ class Toolbar:
             layout=Layout(width='100%')
         )
 
-        self.details = [self.savebutton, self.reloadbutton, self.deletebutton]
         self.summary = [self.editbutton]
+        self.details = [self.savebutton, self.reloadbutton, self.deletebutton]

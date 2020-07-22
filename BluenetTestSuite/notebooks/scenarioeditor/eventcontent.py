@@ -1,4 +1,4 @@
-from ipywidgets import IntSlider, ToggleButtons, Text, Layout
+from ipywidgets import IntSlider, ToggleButtons, Text, Layout, Button, HBox
 
 from scenarioeditor.scenarioserialisation import *
 
@@ -35,9 +35,17 @@ class EventContent:
             layout=Layout(width='100%')
         )
 
-        self.set(scenario_event)
+        self.summarywidget_left = Button(description="", layout=Layout(width='25%'))
+        self.summarywidget_middle = Button(description="uninitialized", layout=Layout(width="auto", padding="0px 5px"))
+        self.summarywidget = HBox([self.summarywidget_left, self.summarywidget_middle])
 
-        self.summary = []
+        for widg in self.summarywidget.children:
+            widg.style.button_color = 'white'
+
+        self.set(scenario_event)
+        self.update_summary()
+
+        self.summary = [self.summarywidget]
         self.details = [self.timepicker, self.timeslider, self.commandname, self.arguments]
 
     def get(self):
@@ -58,3 +66,27 @@ class EventContent:
             self.timeslider.disabled = True
         elif self.timepicker.value == self.timepicker_run:
             self.timeslider.disabled = False
+
+    def update_summary(self):
+        color_dict = {
+            self.timepicker_init: "#ace3ca",
+            self.timepicker_run: "#baa5cf",
+            "uninitialized": "red"
+        }
+
+        placement_time = self.timeslider.value if self.timepicker.value == self.timepicker_run else 0
+        relative_time = int(100 * placement_time / float(24 * 60 * 60))
+
+        self.summarywidget_left.layout.width = str(relative_time) + "%"
+
+        if self.commandname.value:
+            self.summarywidget_middle.description = "{0}({1})".format(
+                self.commandname.value,
+                self.arguments.value
+            )
+            self.summarywidget_middle.tooltip = self.summarywidget_middle.description
+
+            self.summarywidget_middle.style.button_color = color_dict[self.timepicker.value]
+        else:
+            self.summarywidget_middle.description = "uninitialized"
+            self.summarywidget_middle.style.button_color = color_dict["uninitialized"]

@@ -39,7 +39,8 @@ class ScenarioEventEditor:
         self.eventcontent.timeslider.observe(lambda x: self.metadata.set(self.eventcontent.get()), 'value')
         self.eventcontent.timepicker.observe(lambda x: self.metadata.set(self.eventcontent.get()), 'value')
         self.eventcontent.timepicker.observe(lambda x: self.eventcontent.update_slider_disabled(), 'value')
-
+        for widg in self.eventcontent.details:
+            widg.observe(lambda x: self.eventcontent.update_summary())
 
     def toggle_detail_widgets(self, observation):
         if self.toolbar.editbutton.value:

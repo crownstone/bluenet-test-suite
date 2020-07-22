@@ -5,6 +5,7 @@ from icons import *
 from scenarioeditor.scenarioserialisation import *
 
 from scenarioeditor.toolbar import *
+from scenarioeditor.metadata import *
 
 class ScenarioEventEditor:
     def __init__(self, scenario_event, filepath):
@@ -12,17 +13,15 @@ class ScenarioEventEditor:
         self.scenario_event = scenario_event
 
         # widget subgroups
-        self.toolbar = Toolbar()
+        self.toolbar = Toolbar(scenario_event, filepath)
+        self.metadata = MetaData(scenario_event, filepath)
 
         self.event_summary = []#VBox()
         self.event_details = []#VBox()
 
-        self.metadata_summary = []#VBox()
-        self.metadata_details = []#VBox()
-
         # top level widget group
-        self.summary = MakeHBox([self.metadata_summary, self.event_summary, self.toolbar.summary], ['5%', '90%', '5%'])
-        self.details = MakeHBox([self.metadata_details, self.event_details, self.toolbar.details], ['5%', '90%', '5%'])
+        self.summary = MakeHBox([self.metadata.summary, self.event_summary, self.toolbar.summary], ['5%', '90%', '5%'])
+        self.details = MakeHBox([self.metadata.details, self.event_details, self.toolbar.details], ['5%', '90%', '5%'])
 
         self.event_editor = VBox([self.summary], layout=Layout(width='100%'))
 

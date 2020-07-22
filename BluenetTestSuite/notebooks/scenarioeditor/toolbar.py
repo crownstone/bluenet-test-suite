@@ -1,9 +1,9 @@
-from ipywidgets import ToggleButton, Layout,Button
+from ipywidgets import ToggleButton, Layout, Button
 
 from icons import *
 
 class Toolbar:
-    def __init__(self):
+    def __init__(self, scenario_event, filepath):
         self.editbutton = ToggleButton(
             value=False,  # meaning 'collapsed'
             tooltip='Expand',

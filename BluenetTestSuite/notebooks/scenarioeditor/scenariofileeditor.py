@@ -54,8 +54,8 @@ class ScenarioFileEditor:
 
     def update_content(self, filepath):
         """
-               construct, update or clear the fileeditor based on wether filepath is different from the current, identical, or None.
-               """
+        construct, update or clear the fileeditor based on wether filepath is different from the current, identical, or None.
+        """
         if not filepath:
             # if empty, we clear the store editor, although we kep hold of the individual widgets
             self.behaviourstorefileeditor.children = []

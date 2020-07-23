@@ -90,7 +90,7 @@ class BehaviourEntryEditor:
             json.dump(store, json_file, indent=4, default=lambda x: x.__dict__)
             json_file.truncate()
 
-    def reload_widgets(self, b):
+    def reload(self, b):
         with open(self.filepath, "r+") as json_file:
             store = BehaviourStore(**json.load(json_file))
 
@@ -104,7 +104,7 @@ class BehaviourEntryEditor:
     def setup_interaction(self):
         ### interaction setup
         self.savebutton.on_click(lambda x: self.save(x))
-        self.reloadbutton.on_click(lambda x: self.reload_widgets(x))
+        self.reloadbutton.on_click(lambda x: self.reload(x))
         self.deletebutton.on_click(lambda x: self.delete(x))
 
         # register 'on edit button click'

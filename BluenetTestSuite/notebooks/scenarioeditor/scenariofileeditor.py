@@ -71,9 +71,6 @@ class ScenarioFileEditor:
         Reads filepath as json and constructs editor widget groups for each entry.
         Also constructs the header and footer for the behaviourstorefileeditor.
         """
-        with self.file_editor_error_output_field:
-            print(F"create editor for file: {filepath}")
-
         ###  adjust header information
         self.behaviourstorefileeditorheader.children = [
             MakeHBox_single([Label("Current file:", layout=Layout(width='100%')),
@@ -124,9 +121,6 @@ class ScenarioFileEditor:
         Callback that will write a new behaviour entry into the given path.
         No checking implemented yet.
         """
-        with self.file_editor_error_output_field:
-            print("add event to list")
-
         with open(filepath, "r+") as json_file:
             json_data = json.load(json_file)
             new_scenario_event = ScenarioEvent()

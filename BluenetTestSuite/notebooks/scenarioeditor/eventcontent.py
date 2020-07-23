@@ -4,6 +4,9 @@ from scenarioeditor.scenarioserialisation import *
 
 class EventContent:
     def __init__(self, scenario_event, filepath):
+        self.scenario_event = scenario_event
+        self.filepath = filepath
+
         self.timepicker_init = 'Initialisation of scenario'
         self.timepicker_run = 'Time of day'
 
@@ -52,10 +55,12 @@ class EventContent:
         s = ScenarioEvent()
         s.time = None if self.timepicker.value == self.timepicker_init else self.timeslider.value
         s.commandname = self.commandname.value
-        s.arguments = self.arguments.value.split(",")
+        s.arguments = self.arguments.value
+        s.guid = self.scenario_event.guid
         return s
 
     def set(self, scenario_event):
+        self.scenario_event = scenario_event
         self.timepicker.value = self.timepicker_init if scenario_event.time is None else self.timepicker_run
         self.timeslider.value = scenario_event.time or 0
         self.commandname.value = scenario_event.commandname

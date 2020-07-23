@@ -137,5 +137,14 @@ class ScenarioFileEditor:
             )
 
     def save_all(self, filepath):
+        """
+        Saves all changes to the file at location 'filepath'
+        """
+        if not filepath:
+            return
         with self.file_editor_error_output_field:
-            print("save all clicked")
+            print(F"saving all entry changes to {filepath}")
+        with open(filepath, "w") as json_file:
+            scene = ScenarioDescription()
+            scene.events = [(eventeditor.get_event()) for eventeditor in self.eventeditors]
+            json.dump(scene, json_file, indent=4, default=lambda x: x.__dict__)

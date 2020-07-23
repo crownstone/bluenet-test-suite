@@ -45,12 +45,12 @@ class EventContent:
         for widg in self.summarywidget.children:
             widg.style.button_color = 'white'
 
-        self.set(scenario_event)
-        self.update_summary()
-
         self.summary = [self.summarywidget]
         self.details = [self.timepicker, self.timeslider, self.commandname, self.arguments]
 
+        self.setup_interaction()
+        self.set(scenario_event)
+        
     def get(self):
         s = ScenarioEvent()
         s.time = None if self.timepicker.value == self.timepicker_init else self.timeslider.value
@@ -65,6 +65,12 @@ class EventContent:
         self.timeslider.value = scenario_event.time or 0
         self.commandname.value = scenario_event.commandname
         self.arguments.value = scenario_event.arguments
+
+    def setup_interaction(self):
+        self.timepicker.observe(lambda x: self.update_slider_disabled(), 'value')
+
+        for widg in self.details:
+            widg.observe(lambda x: self.update_summary())
 
     def update_slider_disabled(self):
         if self.timepicker.value == self.timepicker_init:

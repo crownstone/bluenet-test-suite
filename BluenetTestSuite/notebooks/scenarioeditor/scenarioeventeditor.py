@@ -35,6 +35,9 @@ class ScenarioEventEditor:
         # concrete widget forwards
         self.deletebutton = self.toolbar.deletebutton
 
+        # populate metadata with initial content
+        self.metadata.set(self.eventcontent.get())
+
         self.setup_interaction()
 
     def get_widgets(self):
@@ -43,10 +46,6 @@ class ScenarioEventEditor:
     def setup_interaction(self):
         self.eventcontent.timeslider.observe(lambda x: self.metadata.set(self.eventcontent.get()), 'value')
         self.eventcontent.timepicker.observe(lambda x: self.metadata.set(self.eventcontent.get()), 'value')
-        self.eventcontent.timepicker.observe(lambda x: self.eventcontent.update_slider_disabled(), 'value')
-
-        for widg in self.eventcontent.details:
-            widg.observe(lambda x: self.eventcontent.update_summary())
 
         self.toolbar.editbutton.observe(lambda x: self.toggle_detail_widgets(x), 'value')
         self.toolbar.savebutton.on_click(lambda x: self.save(x))
@@ -90,3 +89,6 @@ class ScenarioEventEditor:
             json_file.seek(0)  # rewind
             json.dump(scene, json_file, indent=4, default=lambda x: x.__dict__)
             json_file.truncate()
+
+    def get_event(self):
+        return self.eventcontent.get()

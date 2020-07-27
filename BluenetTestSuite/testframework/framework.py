@@ -27,7 +27,7 @@ class TestFramework:
 
     # __enter__ is part of the 'with' interface. It is used to setup the testframework
     def __enter__(self):
-        self.uart.initialize_usb_sync()
+        self.uart.initialize_usb_sync(port='/dev/ttyACM0')
         return self
 
     # __exit__ is part of the 'with' interface. It will be used to tear down the test environment.

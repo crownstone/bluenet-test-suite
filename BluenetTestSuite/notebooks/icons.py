@@ -6,6 +6,7 @@ These names come from font-awesome: https://fontawesome.com/v4.7.0/icons/
 icon_ellipsis = 'ellipsis-h'
 icon_cog = 'cog'
 icon_pencil = 'pencil'
+icon_bug = 'bug'
 
 icon_expand = 'bars'
 icon_minimize = 'window-minimize'

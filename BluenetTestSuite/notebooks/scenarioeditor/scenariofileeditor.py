@@ -1,4 +1,4 @@
-from ipywidgets import Button, Layout, Label, VBox, Text, Output
+from ipywidgets import Button, ToggleButton, Layout, Label, VBox, Text, Output
 
 from icons import *
 from utils import *
@@ -18,12 +18,21 @@ class ScenarioFileEditor:
             layout=Layout(width='100%')
         )
 
+        self.debugbutton = ToggleButton(
+            value=False,
+            tooltip="Show or hide debug widgets",
+            disabled=False,
+            icon=icon_bug,
+            layout = Layout(width='100%')
+        )
+
         self.behaviourstorefileeditorlegend = MakeHBox_single(
             [
                 MakeHBox_single([Label("Time:")], ['100%']),
-                MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)])
+                MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)]),
+                self.debugbutton
             ],
-            ['5%', '90%']
+            ['5%', '90%', '5%']
         )
 
         self.behaviourstorefileeditorheader = VBox([
@@ -106,6 +115,8 @@ class ScenarioFileEditor:
         self.addbehaviourbutton._click_handlers.callbacks = []
         self.addbehaviourbutton.on_click(lambda x: self.addevent(filepath))
 
+        self.debugbutton.observe(lambda x: self.toggle_debug_view(x), 'value')
+
 
     def update_file_editor(self, filepath):
         with self.file_editor_error_output_field:
@@ -116,9 +127,13 @@ class ScenarioFileEditor:
     def update_editor_content_widgets(self):
         self.scenariofileeditorcontent.children = [eventeditor.get_widgets() for eventeditor in self.eventeditors]
 
+    def toggle_debug_view(self, observation):
+        for eventeditor in self.eventeditors:
+            eventeditor.set_debug_view(self.debugbutton.value)
+
     def addevent(self, filepath):
         """
-        Callback that will write a new behaviour entry into the given path.
+        Callback that will write a new scenario event into the json file at the given path.
         No checking implemented yet.
         """
         with open(filepath, "r+") as json_file:

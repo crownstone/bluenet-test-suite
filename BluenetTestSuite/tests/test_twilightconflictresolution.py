@@ -111,8 +111,7 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
 
         result = expect(FW, "TwilightHandler", "currentIntendedState", testcase.e[i],
                       "({0},{1}). At time: {2}:{3}".format(i, str(testcase), (testtime // 3600) % 24,
-                                                                   (testtime % 3600) // 60),
-                      True)
+                                                                   (testtime % 3600) // 60))
         if result:
             return result
 

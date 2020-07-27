@@ -4,6 +4,7 @@ from enum import IntEnum
 class EventTypeCategory(IntEnum):
     StateBase                     = 0x000
     InternalBase                  = 0x100
+    InternalBaseTests = 0xF000,
     InternalBaseBluetooth         = InternalBase + 0
     InternalBaseSwitch            = InternalBase + 20
     InternalBasePower             = InternalBase + 40
@@ -30,5 +31,7 @@ class EventType(IntEnum):
     CMD_SWITCHING_ALLOWED         = EventTypeCategory.InternalBaseSwitch + 7
     CMD_DIMMING_ALLOWED           = EventTypeCategory.InternalBaseSwitch + 8
     CMD_SWITCH_AGGREGATOR_RESET   = EventTypeCategory.InternalBaseSwitch + 9
+
+    CMD_TEST_SET_TIME             = EventTypeCategory.InternalBaseTests + 0
 
 

@@ -4,9 +4,12 @@ Just a bunch of common methods
 
 import time
 
-from BluenetLib.lib.protocol.BluenetTypes import ControlType, StateType
+from crownstone_core.protocol.BluenetTypes import ControlType, StateType
+from crownstone_core.util.Conversion import Conversion
 
 from BluenetTestSuite.firmwarecontrol.datatransport import *
+from BluenetTestSuite.firmwarecontrol.InternalEventCodes import EventType
+
 
 
 def fullReset():
@@ -25,8 +28,12 @@ def getTime_uint32(hours, minutes, day=None):
     return dayoffset * 24*60*60 + hours * 60*60 + minutes * 60
 
 def setTime_uint32(time_as_uint32):
-    sendCommandToCrownstone(ControlType.SET_TIME,
-                            Conversion.uint32_to_uint8_array(time_as_uint32))
+    """
+    This bypasses throttling for setTime on the firmware by injecting an event on the internal bus,
+    which is usefull for running tests that skip forwared in time to speed things up.
+    """
+    sendEventToCrownstone(EventType.CMD_TEST_SET_TIME,
+                          Conversion.uint32_to_uint8_array(time_as_uint32))
 
 def setTime_hmd(hours, minutes, day=None):
     setTime_uint32(getTime_uint32(hours,

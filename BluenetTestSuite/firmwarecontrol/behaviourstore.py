@@ -26,3 +26,4 @@ def sendBehaviour(index, behaviour):
 
 def sendClearBehaviourStoreEvent():
     sendEventToCrownstone(0x100 + 170 + 6, [])
+    sleepAfterUartCommand()

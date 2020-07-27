@@ -14,8 +14,9 @@ class TestScenario:
     def __init__(self, FW, name="TestScenario"):
         self.fw = FW
         self.eventlist = []
-        self.currenttime = None
         self.name = name
+        self.currenttime = None
+        self.currentcomment = None
 
     def clearTime(self):
         self.currenttime = None
@@ -23,6 +24,15 @@ class TestScenario:
     def setTime(self, hours, minutes, days=0):
         # days is set to 0 to prevent mishaps due to settime(0) being refused by the firmware.
         self.currenttime = getTime_uint32(hours, minutes, days)
+
+    def setComment(self, commentstr):
+        self.currentcomment = commentstr
+
+    def clearComment(self):
+        self.currentcomment = None
+
+    def getComment(self):
+        return "" if self.currentcomment is None else self.currentcomment
 
     def addTimeAndEvent(self, event_time, event_func):
         self.eventlist += [[event_time, event_func]]
@@ -37,13 +47,15 @@ class TestScenario:
         """
         self.addEvent(bind(time.sleep, seconds))
 
-    def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
+    def addExpect(self, classname, variablename, expectedvalue, errormessage=None, verbose=False):
+        errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expect, self.fw, classname, variablename, expectedvalue, formattederrormessage, verbose)
         )
 
-    def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=False):
+    def addExpectAny(self, classname, variablename, expectedvalues, errormessage=None, verbose=False):
+        errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expectAny, self.fw, classname, variablename, expectedvalues, formattederrormessage, verbose)
@@ -77,7 +89,7 @@ class TestScenario:
                 else:
                     return "{1} at setup time: {0}".format(response, self.name)
 
-            t = previous_t
+            previous_t = t
 
         return TestFramework.success(self.name)
 

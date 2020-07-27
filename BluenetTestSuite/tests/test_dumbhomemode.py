@@ -14,7 +14,7 @@ from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 def common_setup():
     sendSwitchAggregatorReset()
     sendClearBehaviourStoreEvent()
-    time.sleep(1)
+    time.sleep(5)
 
     sendBehaviour(0, buildTwilight(9, 12, 80))
     sendBehaviour(1, buildTwilight(11, 15, 60))
@@ -38,32 +38,32 @@ def buildDumbScenario(FW):
     for hour in range (24):
         scenario.setTime(hour, 0)
 
-        comment = "nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1"
-        scenario.addExpect("SwitchAggregator", "overrideState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
-        scenario.addExpectAny("SwitchAggregator", "aggregatedState", ["0", "-1"], comment)
+        scenario.setComment("nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1")
+        scenario.addExpect("SwitchAggregator", "overrideState", "-1")
+        scenario.addExpect("SwitchAggregator", "behaviourState", "-1")
+        scenario.addExpect("SwitchAggregator", "twilightState", "-1")
+        scenario.addExpectAny("SwitchAggregator", "aggregatedState", ["0", "-1"])
 
-        comment = "when switchcraft happens in dumb mode it should always result in translucent override aggregated to 100"
+        scenario.setComment("when switchcraft happens in dumb mode it should always result in translucent override aggregated to 100")
         scenario.addEvent(sendSwitchCraftEvent)
-        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
-        scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "100", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255")
+        scenario.addExpect("SwitchAggregator", "behaviourState", "-1")
+        scenario.addExpect("SwitchAggregator", "twilightState", "-1")
+        scenario.addExpect("SwitchAggregator", "aggregatedState", "100")
 
-        comment = "another switchcraft will result in override 0"
+        scenario.setComment("another switchcraft will result in override 0")
         scenario.addEvent(sendSwitchCraftEvent)
-        scenario.addExpect("SwitchAggregator", "overrideState", "0", comment)
-        scenario.addExpect("SwitchAggregator", "behaviourState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "twilightState", "-1", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "0", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "0")
+        scenario.addExpect("SwitchAggregator", "behaviourState", "-1")
+        scenario.addExpect("SwitchAggregator", "twilightState", "-1")
+        scenario.addExpect("SwitchAggregator", "aggregatedState", "0")
 
-        comment = "received switch commands should still be executed"
+        scenario.setComment("received switch commands should still be executed")
         scenario.addEvent(bind(sendSwitchCommand,80))
-        scenario.addExpect("SwitchAggregator", "overrideState", "80", comment)
-        scenario.addExpect("SwitchAggregator", "aggregatedState", "80", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "80")
+        scenario.addExpect("SwitchAggregator", "aggregatedState", "80")
         scenario.addEvent(bind(sendSwitchCommand, 0xff))
-        scenario.addExpect("SwitchAggregator", "overrideState", "255", comment)
+        scenario.addExpect("SwitchAggregator", "overrideState", "255")
         # aggregated state depends on time...
 
         # clear aggregator for next loop iteration

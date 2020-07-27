@@ -10,7 +10,7 @@ from scenarioeditor.scenariofileeditor import *
 import os, json
 
 
-SCENARIO_FILE_EXT = ".scenario.json"
+
 
 class ScenarioFolderEditor:
     def __init__(self):

@@ -9,7 +9,7 @@ from behaviourstoreeditor.behaviourstorefileeditor import *
 import os, json
 
 
-BEHAVIOURSTORE_FILE_EXT = ".behaviourstore.json"
+
 
 class BehaviourStoreFolderEditor:
     def __init__(self):

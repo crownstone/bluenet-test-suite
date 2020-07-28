@@ -5,15 +5,17 @@ from ipywidgets import Checkbox
 
 from behaviourstoreeditor.behaviourstoreserialisation import *
 
+from crownstone_core.packets.behaviour.BehaviourTypes import BehaviourType
+
 def BehaviourOverviewSummary(behaviour_entry, filepath):
     """
     Returns list of widgets for single line description of a behaviour,
     and a callback taking in a behaviour description dict to update its value.
     """
     color_dict = {
-        'Switch': "lightgreen",
-        'ExtendedSwitch': "lightblue",
-        'Twilight': "#DADADA"
+        BehaviourType.behaviour.name: "lightgreen",
+        BehaviourType.smartTimer.name: "lightblue",
+        BehaviourType.twilight.name: "#DADADA"
     }
 
     no_color = 'white'
@@ -113,7 +115,7 @@ def BehaviourOverviewDetails(behaviour_entry, filepath):
     )
 
     typefield = ToggleButtons(
-        options=['Switch', 'ExtendedSwitch', 'Twilight'],
+        options=[bht.name for bht in BehaviourType],
         description='Type:',
         disabled=False,
         button_style='info',

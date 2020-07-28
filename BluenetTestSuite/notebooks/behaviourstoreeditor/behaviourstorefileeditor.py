@@ -9,7 +9,6 @@ from behaviourstoreeditor.behaviourstoreserialisation import *
 import json
 
 
-
 class BehaviourStoreFileEditor:
     def __init__(self):
         self.file_editor_error_output_field = Output()  # used for error reporting

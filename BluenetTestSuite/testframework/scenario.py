@@ -17,6 +17,7 @@ class TestScenario:
         self.name = name
         self.currenttime = None
         self.currentcomment = None
+        self.guidstr = ""
 
     def clearTime(self):
         self.currenttime = None
@@ -25,6 +26,12 @@ class TestScenario:
         # days is set to 0 to prevent mishaps due to settime(0) being refused by the firmware.
         self.currenttime = getTime_uint32(hours, minutes, days)
 
+    def setTime_secondssincemidnight(self, ssm):
+        self.currenttime = ssm
+
+    def setGuid(self,guidstr):
+        self.guidstr = guidstr
+
     def setComment(self, commentstr):
         self.currentcomment = commentstr
 
@@ -32,7 +39,7 @@ class TestScenario:
         self.currentcomment = None
 
     def getComment(self):
-        return "" if self.currentcomment is None else self.currentcomment
+        return "" if self.currentcomment is None else "{0}: {1}".format(self.guidstr, self.currentcomment)
 
     def addTimeAndEvent(self, event_time, event_func):
         self.eventlist += [[event_time, event_func]]
@@ -40,7 +47,7 @@ class TestScenario:
     def addEvent(self, event_func):
         self.addTimeAndEvent(self.currenttime, event_func)
 
-    def wait(self, seconds):
+    def wait(self, seconds=0):
         """
         Adds an event that simply sleeps for seconds while running the scenario.
         Can be used to resolve subtle timing issues during testing.
@@ -85,9 +92,9 @@ class TestScenario:
 
             if response:
                 if t is not None:
-                    return "{3} at {0:0>2}:{1:0>2}h: {2} ".format((t // 3600) % 24, (t % 3600) // 60, response, self.name)
+                    return "{2} (at {0:0>2}:{1:0>2}h)".format((t // 3600) % 24, (t % 3600) // 60, response)
                 else:
-                    return "{1} at setup time: {0}".format(response, self.name)
+                    return "{0} (at setup time)".format(response)
 
             previous_t = t
 

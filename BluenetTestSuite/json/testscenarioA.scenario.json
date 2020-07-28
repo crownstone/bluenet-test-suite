@@ -9,8 +9,26 @@
         {
             "guid": "bbfee7ab8015464ab9d1443a59634722",
             "time": null,
-            "commandname": "wait",
-            "arguments": ""
+            "commandname": "setComment",
+            "arguments": "\"should have clean init values\""
+        },
+        {
+            "guid": "85ac0174884a4f6b957c75db8ded4d31",
+            "time": 32400,
+            "commandname": "addExpect",
+            "arguments": "\"SwitchAggregator\", \"overrideState\", \"-1\""
+        },
+        {
+            "guid": "402e1bf8a8774fee9cd0f510e82d81dc",
+            "time": null,
+            "commandname": "setComment",
+            "arguments": "\"another comment here\""
+        },
+        {
+            "guid": "0eac1c7e9c2047d5aeb28c87dd2b0cf4",
+            "time": 34200,
+            "commandname": "addExpectAny",
+            "arguments": "\"SwitchAggregator\", \"behaviourState\", [\"0\",\"-1\"]"
         }
     ]
 }

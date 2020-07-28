@@ -40,15 +40,17 @@ class TestFramework:
         return "{0}Result: Success{1} ({2})".format(Style.BRIGHT + Fore.GREEN, Style.RESET_ALL, note)
 
     @classmethod
-    def failure(cls, cause=""):
+    def failure(cls, cause=None):
         """
         Returns a formatted failure string containing a uuid that is also
         printed during this call so that the failure can be easily be retrieved
         in the logs as well as final output.
         """
-        failureid = uuid.uuid4()
+        failureid = ""
+        if cause is None:
+            failureid = "({0})".format(uuid.uuid4())
 
-        failstr = "{0}Result: Failure ({2}){1}".format(Style.BRIGHT + Fore.RED, Style.RESET_ALL, failureid)
+        failstr = "{0}Result: Failure {2}{1}".format(Style.BRIGHT + Fore.RED, Style.RESET_ALL, failureid)
 
         if cause:
             failstr += ": " + cause

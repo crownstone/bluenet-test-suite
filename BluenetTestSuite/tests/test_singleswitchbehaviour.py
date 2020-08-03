@@ -10,15 +10,13 @@ from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 
 def common_setup():
     sendClearBehaviourStoreEvent()
-    time.sleep(1) # clearing the store takes a bit more time maybe
+    time.sleep(5) # clearing the store takes a bit more time maybe
 
     sendSwitchAggregatorReset()
 
 def add_common_setup(scenario):
     scenario.clearTime()
     scenario.addEvent(common_setup)
-
-    scenario.setTime(0,0)
 
     # behaviour engine resolves to 0 when no behaviours are stored
     scenario.addExpectAny("SwitchAggregator", "behaviourState", ["0","-1"], "behaviourState should've been reset after common init", True)

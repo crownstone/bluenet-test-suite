@@ -1,4 +1,4 @@
-import sys, json
+import sys, os, json
 
 from BluenetTestSuite.notebooks.utils import *
 from BluenetTestSuite.notebooks.behaviourstoreeditor.behaviourstoreserialisation import *
@@ -7,8 +7,10 @@ from BluenetTestSuite.notebooks.scenarioeditor.scenarioserialisation import *
 inputfolder = "/home/arend/Documents/bluenet-test-suite/bluenet-test-suite/BluenetTestSuite/json/"
 outputfolder = "/home/arend/Documents/bluenet-test-suite/bluenet-test-suite/BluenetTestSuite/generated/"
 
-behaviourstorefilename = "testbehaviourstoreA" + BEHAVIOURSTORE_FILE_EXT
-scenariofilename = "testscenarioA" + SCENARIO_FILE_EXT
+outputfolder += "dumbhomemode/"
+
+behaviourstorefilename = "behaviourstoreA"
+scenariofilename = "scenarioA"
 
 def write_preamble(output):
     """
@@ -27,6 +29,7 @@ from BluenetTestSuite.testframework.scenario import *
 from BluenetTestSuite.firmwarecontrol.switchaggregator import *
 from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 
+from BluenetTestSuite.notebooks.utils import *
 from BluenetTestSuite.notebooks.behaviourstoreeditor.behaviourstoreserialisation import *
 
 inputfolder = \"{inputfolder}\"
@@ -44,11 +47,12 @@ def write_behaviour_store_setup(output):
     """
     print(
     F"""def load_behaviourstore():
+    \"\"\" {inputfolder + behaviourstorefilename + BEHAVIOURSTORE_FILE_EXT} \"\"\"
     sendSwitchAggregatorReset()
     sendClearBehaviourStoreEvent()
     time.sleep(5)
 
-    with open(inputfolder + behaviourstorefilename,"r") as store_file:
+    with open(inputfolder + behaviourstorefilename + BEHAVIOURSTORE_FILE_EXT,"r") as store_file:
         json_data = json.load(store_file)
         behaviourstore = BehaviourStore(**json_data)
         for behaviourentry in behaviourstore.entries:
@@ -61,13 +65,13 @@ def write_behaviour_store_setup(output):
 def write_scenario_setup(output):
     print(
         F"""def build_scenario(FW):
-    \"\"\" {inputfolder + scenariofilename} \"\"\"""", file=output)
-    print("""    scenario = TestScenario(FW, F"{behaviourstorefilename}_{scenariofilename}")
+    \"\"\" {inputfolder + scenariofilename + SCENARIO_FILE_EXT} \"\"\"
+    scenario = TestScenario(FW, "{behaviourstorefilename}+{scenariofilename}")
     scenario.addEvent(load_behaviourstore)
 """, file=output
     )
 
-    with open(inputfolder + scenariofilename, "r") as scene_file:
+    with open(inputfolder + scenariofilename + SCENARIO_FILE_EXT, "r") as scene_file:
         scene = ScenarioDescription(**json.load(scene_file))
         for event in scene.events:
             # print(F"    # {event.guid}", file=output)
@@ -109,7 +113,8 @@ if __name__ == "__main__":
     )
 
 if __name__=='__main__':
-    with open(outputfolder + "template_test.py","w") as outfile:
+    os.makedirs(outputfolder, exist_ok=True)
+    with open(outputfolder + F"test_{behaviourstorefilename}_{scenariofilename}.py","w") as outfile:
         write_preamble(outfile)
         write_behaviour_store_setup(outfile)
         write_scenario_setup(outfile)

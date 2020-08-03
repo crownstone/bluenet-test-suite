@@ -1,0 +1,49 @@
+{
+    "entries": [
+        {
+            "guid": "c137e4a5078b4e0abc8e94d5f40c68a7",
+            "index": 0,
+            "fromfield": 32400,
+            "untilfield": 64800,
+            "intensityfield": 32,
+            "fromuntil_reversed_field": false,
+            "typefield": "behaviour"
+        },
+        {
+            "guid": "d1187b1aaa114d0c90a068fd263107de",
+            "index": 1,
+            "fromfield": 0,
+            "untilfield": 64800,
+            "intensityfield": 80,
+            "fromuntil_reversed_field": false,
+            "typefield": "behaviour"
+        },
+        {
+            "guid": "8199b3b00b004da6a25e83383a6a29f7",
+            "index": 2,
+            "fromfield": 32400,
+            "untilfield": 64800,
+            "intensityfield": 80,
+            "fromuntil_reversed_field": false,
+            "typefield": "behaviour"
+        },
+        {
+            "guid": "17ccec405ba14ffd93147fae8263eceb",
+            "index": 3,
+            "fromfield": 32400,
+            "untilfield": 64800,
+            "intensityfield": 80,
+            "fromuntil_reversed_field": false,
+            "typefield": "twilight"
+        },
+        {
+            "guid": "a613df69b6c640d4b521974f85e627f5",
+            "index": 4,
+            "fromfield": 32400,
+            "untilfield": 64800,
+            "intensityfield": 80,
+            "fromuntil_reversed_field": false,
+            "typefield": "behaviour"
+        }
+    ]
+}

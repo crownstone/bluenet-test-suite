@@ -9,7 +9,7 @@ from crownstone_uart.topics.SystemTopics import SystemTopics
 import time
 
 def sleepAfterUartCommand():
-    time.sleep(0.5)
+    time.sleep(1)
 
 def sendEventToCrownstone(eventtype, eventdata):
     """

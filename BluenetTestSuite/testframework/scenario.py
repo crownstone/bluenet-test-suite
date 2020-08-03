@@ -14,8 +14,10 @@ class TestScenario:
     def __init__(self, FW, name="TestScenario"):
         self.fw = FW
         self.eventlist = []
-        self.currenttime = None
         self.name = name
+        self.currenttime = None
+        self.currentcomment = None
+        self.guidstr = ""
 
     def clearTime(self):
         self.currenttime = None
@@ -24,26 +26,43 @@ class TestScenario:
         # days is set to 0 to prevent mishaps due to settime(0) being refused by the firmware.
         self.currenttime = getTime_uint32(hours, minutes, days)
 
+    def setTime_secondssincemidnight(self, ssm):
+        self.currenttime = ssm
+
+    def setGuid(self,guidstr):
+        self.guidstr = guidstr
+
+    def setComment(self, commentstr):
+        self.currentcomment = commentstr
+
+    def clearComment(self):
+        self.currentcomment = None
+
+    def getComment(self):
+        return "" if self.currentcomment is None else "{0}: {1}".format(self.guidstr, self.currentcomment)
+
     def addTimeAndEvent(self, event_time, event_func):
         self.eventlist += [[event_time, event_func]]
 
     def addEvent(self, event_func):
         self.addTimeAndEvent(self.currenttime, event_func)
 
-    def wait(self, seconds):
+    def wait(self, seconds=0):
         """
         Adds an event that simply sleeps for seconds while running the scenario.
         Can be used to resolve subtle timing issues during testing.
         """
         self.addEvent(bind(time.sleep, seconds))
 
-    def addExpect(self, classname, variablename, expectedvalue, errormessage="", verbose=False):
+    def addExpect(self, classname, variablename, expectedvalue, errormessage=None, verbose=False):
+        errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expect, self.fw, classname, variablename, expectedvalue, formattederrormessage, verbose)
         )
 
-    def addExpectAny(self, classname, variablename, expectedvalues, errormessage="", verbose=False):
+    def addExpectAny(self, classname, variablename, expectedvalues, errormessage=None, verbose=False):
+        errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
             bind(expectAny, self.fw, classname, variablename, expectedvalues, formattederrormessage, verbose)
@@ -73,11 +92,11 @@ class TestScenario:
 
             if response:
                 if t is not None:
-                    return "{3} at {0:0>2}:{1:0>2}h: {2} ".format((t // 3600) % 24, (t % 3600) // 60, response, self.name)
+                    return "{2} (at {0:0>2}:{1:0>2}h)".format((t // 3600) % 24, (t % 3600) // 60, response)
                 else:
-                    return "{1} at setup time: {0}".format(response, self.name)
+                    return "{0} (at setup time)".format(response)
 
-            t = previous_t
+            previous_t = t
 
         return TestFramework.success(self.name)
 

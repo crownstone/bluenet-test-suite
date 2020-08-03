@@ -1,23 +1,24 @@
 from ipywidgets import Layout, Text, Button, Select, VBox, Output, Label
 
-from icons import *
 from utils import *
-from behaviourstoreeditor.behaviourstoreserialisation import *
+from icons import *
 
-from behaviourstoreeditor.behaviourstorefileeditor import *
+from scenarioeditor.scenarioserialisation import *
+from scenarioeditor.scenariofileeditor import *
+
 
 import os, json
 
 
 
 
-class BehaviourStoreFolderEditor:
+class ScenarioFolderEditor:
     def __init__(self):
         self.error_output_field = Output()  # used for error reporting
         self.setup_folder_name_widgets()
         self.setup_read_file_name_widgets()
         self.setup_write_file_name_widgets()
-        self.fileeditor = BehaviourStoreFileEditor()
+        self.fileeditor = ScenarioFileEditor()
         self.setup_main_widget()
         self.setup_interaction()
         self.reload_file_selector()
@@ -125,7 +126,7 @@ class BehaviourStoreFolderEditor:
     def get_current_file(self, file_name_widget):
         """
         This method returns the value of the file_name_widget, with prepended the path
-        from the  and the BEHAVIOURSTORE_FILE_EXT appended.
+        from the  and the SCENARIO_FILE_EXT appended.
 
         Returns None if the widget value evaluates to false in boolean context.
 
@@ -136,7 +137,7 @@ class BehaviourStoreFolderEditor:
         return "".join([
             self.folder_name_widget.value, "/",
             file_name_widget.value,
-            BEHAVIOURSTORE_FILE_EXT
+            SCENARIO_FILE_EXT
         ])
 
     def reload_file_selector(self, button=None):
@@ -145,8 +146,8 @@ class BehaviourStoreFolderEditor:
         """
         try:
             next_option_list = sorted(
-                [fil[:-len(BEHAVIOURSTORE_FILE_EXT)] for fil in os.listdir(self.folder_name_widget.value) if
-                 fil.endswith(BEHAVIOURSTORE_FILE_EXT)])
+                [fil[:-len(SCENARIO_FILE_EXT)] for fil in os.listdir(self.folder_name_widget.value) if
+                 fil.endswith(SCENARIO_FILE_EXT)])
 
             self.read_file_name_widget.options = next_option_list
 
@@ -160,7 +161,7 @@ class BehaviourStoreFolderEditor:
 
     def reload_button_click(self, button=None):
         """
-        Reload the behaviour file editor given the currently selected read file.
+        Reload the scenario file editor given the currently selected read file.
         """
         self.fileeditor.update_content(self.get_current_file(self.read_file_name_widget))
 
@@ -176,7 +177,9 @@ class BehaviourStoreFolderEditor:
             with open(path_and_filename, 'w') as created_file:
                 self.reload_file_selector()
                 self.read_file_name_widget.value=self.write_file_name_widget.value  # set value to newly created file
-                json.dump(BehaviourStore().__dict__, created_file, indent=4)
+
+                # write empty scenario
+                json.dump(ScenarioDescription().__dict__, created_file, indent=4)
         else:
             with self.error_output_field:
                 print("file already exists, not changing anything")

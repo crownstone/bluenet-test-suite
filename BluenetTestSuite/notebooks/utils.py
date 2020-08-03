@@ -1,6 +1,9 @@
 from ipywidgets import HBox, VBox, Layout
 
 
+BEHAVIOURSTORE_FILE_EXT = ".behaviourstore.json"
+SCENARIO_FILE_EXT = ".scenario.json"
+
 def MakeHBox(widgetlistlist, widgetwidthlist):
     hbox_layout = Layout(
         overflow='scroll',

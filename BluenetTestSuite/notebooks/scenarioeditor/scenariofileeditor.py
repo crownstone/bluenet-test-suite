@@ -1,31 +1,38 @@
-from ipywidgets import Button, Layout, Label, VBox, Text, Output
+from ipywidgets import Button, ToggleButton, Layout, Label, VBox, Text, Output
 
-from utils import *
 from icons import *
+from utils import *
 
-from behaviourstoreeditor.behaviourentryeditor import *
-from behaviourstoreeditor.behaviourstoreserialisation import *
+from scenarioeditor.scenarioeventeditor import *
 
 import json
 
-
-class BehaviourStoreFileEditor:
+class ScenarioFileEditor:
     def __init__(self):
         self.file_editor_error_output_field = Output()  # used for error reporting
 
         self.addbehaviourbutton = Button(
-            tooltip='Add new behaviour to file',
+            tooltip='Add new event to file',
             disabled=False,
             icon=icon_create,
             layout=Layout(width='100%')
         )
 
+        self.debugbutton = ToggleButton(
+            value=False,
+            tooltip="Show or hide debug widgets",
+            disabled=False,
+            icon=icon_bug,
+            layout = Layout(width='100%')
+        )
+
         self.behaviourstorefileeditorlegend = MakeHBox_single(
             [
-                MakeHBox_single([Label("Index:")], ['100%']),
-                MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)])
+                MakeHBox_single([Label("Time:")], ['100%']),
+                MakeHBox_single([Label(F"{i:02d}:00") for i in range(0, 24, 6)], ['25%' for i in range(4)]),
+                self.debugbutton
             ],
-            ['5%', '90%']
+            ['5%', '90%', '5%']
         )
 
         self.behaviourstorefileeditorheader = VBox([
@@ -34,11 +41,11 @@ class BehaviourStoreFileEditor:
 
         self.behaviourstorefileeditorfooter = MakeHBox_single([self.addbehaviourbutton], ['5%'])
 
-        self.behaviourstorefileeditorcontent = VBox([Label("content not initialized", layout=Layout(width='100%'))])
+        self.scenariofileeditorcontent = VBox([Label("content not initialized", layout=Layout(width='100%'))])
 
         self.behaviourstorefileeditor_children = [
             self.behaviourstorefileeditorheader,
-            self.behaviourstorefileeditorcontent,
+            self.scenariofileeditorcontent,
             self.behaviourstorefileeditorfooter,
             self.file_editor_error_output_field
         ]
@@ -48,7 +55,7 @@ class BehaviourStoreFileEditor:
         self.main_widget = MakeHBox_single([self.behaviourstorefileeditor], ['100%'])
 
         # run time variables
-        self.entryeditors = []
+        self.eventeditors = []
         self.current_filepath = None
 
     def get_widgets(self):
@@ -73,7 +80,7 @@ class BehaviourStoreFileEditor:
         Reads filepath as json and constructs editor widget groups for each entry.
         Also constructs the header and footer for the behaviourstorefileeditor.
         """
-        ### header
+        ###  adjust header information
         self.behaviourstorefileeditorheader.children = [
             MakeHBox_single([Label("Current file:", layout=Layout(width='100%')),
                              Text(F"{filepath}", layout=Layout(width='100%'), disabled=True)],
@@ -81,48 +88,68 @@ class BehaviourStoreFileEditor:
             self.behaviourstorefileeditorlegend
         ]
 
-        ### content
+        ### read what content to load editors for
         try:
             with open(filepath, "r") as json_file:
                 json_data = json.load(json_file)
-                self.entryeditors = [BehaviourEntryEditor(BehaviourEntry(**entry), filepath) for entry in
-                                        json_data['entries']]
+                self.eventeditors = [ScenarioEventEditor(ScenarioEvent(**entry), filepath) for entry in
+                                     json_data['events']]
                 self.update_editor_content_widgets()
         except Exception as e:
             with self.file_editor_error_output_field:
                 print("failed reading json file")
                 print(e)
 
-        for entryeditor in self.entryeditors:
-                entryeditor.deletebutton.on_click(lambda x: self.update_content(filepath))
-
         # when first created, the children aren't displayed yet. that will happen on the first
         # call to this function, hence we set the children of the previously empty VBox.
         self.behaviourstorefileeditor.children = self.behaviourstorefileeditor_children
 
-        ### footer
+        self.current_filepath = filepath
+        self.setup_interaction(filepath)
+
+    def setup_interaction(self, filepath):
+        for eventeditor in self.eventeditors:
+            eventeditor.deletebutton.on_click(lambda x: self.update_content(filepath))
+
         # need to remove previous click handlers in order to not add stuff to files we opened in the past..
         self.addbehaviourbutton._click_handlers.callbacks = []
-        self.addbehaviourbutton.on_click(lambda x: self.addbehaviour(filepath))
+        self.addbehaviourbutton.on_click(lambda x: self.addevent(filepath))
 
-        ### update file path.
-        self.current_filepath = filepath
+        self.debugbutton.observe(lambda x: self.toggle_debug_view(x), 'value')
+
 
     def update_file_editor(self, filepath):
-        """
-        change as little as possible: only reload widgets that have changed and delete widgets that have disappeared
-        """
         with self.file_editor_error_output_field:
-            print("updating file editor")
-
-        # todo: this is quite brutal and collapses all the entry editors...
+            print(F"update editor for file: {filepath}")
+        # todo: update this to a more friendly update rather than recreating the whole thing
         self.create_file_editor(filepath)
-        # try:
-        #     with open(filepath, "r") as json_file:
-        #         json_data = json.load(json_file)
-        # except Exception as e:
-        #     with self.file_editor_error_output_field:
-        #         print("failed updating")
+
+    def update_editor_content_widgets(self):
+        self.scenariofileeditorcontent.children = [eventeditor.get_widgets() for eventeditor in self.eventeditors]
+
+    def toggle_debug_view(self, observation):
+        for eventeditor in self.eventeditors:
+            eventeditor.set_debug_view(self.debugbutton.value)
+
+    def addevent(self, filepath):
+        """
+        Callback that will write a new scenario event into the json file at the given path.
+        No checking implemented yet.
+        """
+        with open(filepath, "r+") as json_file:
+            json_data = json.load(json_file)
+            new_scenario_event = ScenarioEvent()
+
+            json_data["events"] += [new_scenario_event.__dict__]
+            json_file.seek(0)  # rewind
+            json.dump(json_data, json_file, indent=4)
+            json_file.truncate()
+
+            # append new widget
+            self.eventeditors += [ScenarioEventEditor(new_scenario_event, filepath)]
+            self.scenariofileeditorcontent.children += (
+                self.eventeditors[-1].get_widgets(),
+            )
 
     def save_all(self, filepath):
         """
@@ -133,35 +160,6 @@ class BehaviourStoreFileEditor:
         with self.file_editor_error_output_field:
             print(F"saving all entry changes to {filepath}")
         with open(filepath, "w") as json_file:
-            store = BehaviourStore()
-            store.entries = [(entry_editor.get_behaviour_entry()) for entry_editor in self.entryeditors]
-            json.dump(store, json_file, indent=4, default=lambda x: x.__dict__)
-
-    def update_editor_content_widgets(self):
-        self.behaviourstorefileeditorcontent.children = [entryeditor.get_widgets() for entryeditor in self.entryeditors]
-
-    def addbehaviour(self, filepath):
-        """
-        Callback that will write a new behaviour entry into the given path.
-        No checking implemented yet.
-        """
-        with open(filepath, "r+") as json_file:
-            json_data = json.load(json_file)
-            new_behaviour_entry = BehaviourEntry()
-
-            # get available index
-            indices = sorted([editor.get_behaviour_entry().index for editor in self.entryeditors])
-            while new_behaviour_entry.index in indices:
-                new_behaviour_entry.index += 1
-
-            json_data["entries"] += [new_behaviour_entry.__dict__]
-            json_file.seek(0)  # rewind
-            json.dump(json_data, json_file, indent=4)
-            json_file.truncate()
-
-            # append new widget
-            self.entryeditors += [BehaviourEntryEditor(new_behaviour_entry, filepath)]
-            self.behaviourstorefileeditorcontent.children += (
-                self.entryeditors[-1].get_widgets(),
-            )
-
+            scene = ScenarioDescription()
+            scene.events = [(eventeditor.get_event()) for eventeditor in self.eventeditors]
+            json.dump(scene, json_file, indent=4, default=lambda x: x.__dict__)

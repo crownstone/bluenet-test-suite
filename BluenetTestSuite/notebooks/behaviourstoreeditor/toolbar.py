@@ -1,7 +1,6 @@
 from ipywidgets import ToggleButton, Layout,Button
 
-from behaviourstoreeditor.icons import *
-from behaviourstoreeditor.behaviourstoreserialisation import *
+from icons import *
 
 def ToolbarSummary(behaviour_entry, filepath):
     editbutton = ToggleButton(

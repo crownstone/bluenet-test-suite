@@ -19,7 +19,7 @@ class FirmwareState:
     Listens to UART over a port and keeps track of any state values logged by the firmware.
     """
     def __init__(self):
-        self.uartSubscription = UartEventBus.subscribe(SystemTopics.uartNewPackage, self.parse)
+        self.uartSubscription = UartEventBus.subscribe(SystemTopics.uartNewMessage, self.parse)
 
         # statedict: dict (int -> dict (string -> value) ),
         # thisptr -> valuename -> value

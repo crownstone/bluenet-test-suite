@@ -1,13 +1,18 @@
 import time, inspect
-from BluenetLib import Bluenet, BluenetEventBus, UsbTopics
 
-from BluenetLib.lib.core.uart.UartTypes import UartTxType
-from BluenetLib.lib.core.uart.UartWrapper import UartWrapper
-from BluenetLib.lib.core.uart.uartPackets import UartPacket
-from BluenetLib.lib.protocol.BlePackets import ControlPacket
-from BluenetLib.lib.protocol.BluenetTypes import ControlType
-from BluenetLib.lib.topics.SystemTopics import SystemTopics
-from BluenetLib.lib.util.Conversion import Conversion
+
+from BluenetTestSuite.firmwarecontrol.datatransport import sendEventToCrownstone, sendCommandToCrownstone
+
+from crownstone_core.protocol.BlePackets import ControlPacket
+from crownstone_core.protocol.BluenetTypes import ControlType
+from crownstone_core.util.Conversion import Conversion
+
+from crownstone_uart import CrownstoneUart
+from crownstone_uart.core.uart.UartTypes import UartTxType
+from crownstone_uart.core.uart.uartPackets import UartWrapperPacket
+from crownstone_uart.core.uart.uartPackets import UartMessagePacket
+from crownstone_uart.topics.SystemTopics import SystemTopics
+
 
 import pygame #for nice keyboard input
 
@@ -21,27 +26,11 @@ def printFunctionName():
     print(inspect.currentframe().f_back.f_code.co_name)
 
 def sendToCrownstone(commandtype, packetcontent):
-    """
-    [commandtype] must be an element of the ControlType enum.
-    """
-    controlPacket = ControlPacket(commandtype)
-    controlPacket.appendByteArray(packetcontent)
-
-    uartPacket = UartWrapper(UartTxType.CONTROL, controlPacket.getPacket()).getPacket()
-
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
+    sendCommandToCrownstone(commandtype, packetcontent)
 
 def propagateEventToCrownstone(eventtype, eventdata):
-    payload = []
-    payload += Conversion.uint16_to_uint8_array(eventtype)
-    payload += eventdata
+    sendEventToCrownstone(eventtype,eventdata)
 
-    uartPacket = UartWrapper(UartTxType.MOCK_INTERNAL_EVT, payload).getPacket()
-    BluenetEventBus.emit(SystemTopics.uartWriteData, uartPacket)
-
-def WhatToDoWithUartData(data):
-    #print(".")
-    pass  # already handled somehwere else apparently
 
 # ================================= Packet definitions =================================
 class TimeOfDay:
@@ -403,7 +392,7 @@ class Main:
         for v in ControlType:
             print(v)
 
-        self.bluenet = Bluenet()
+        self.uart = CrownstoneUart()
 
         self.initialized = False
 
@@ -418,20 +407,11 @@ class Main:
                 break
 
             try:
-                self.bluenet.initializeUSB("/dev/ttyACM{0}".format(n))
+                self.uart.initialize_usb_sync(port="/dev/ttyACM{0}".format(n))
                 self.initialized = True
                 break
             except:
                 print("coudn't find /dev/ttyACM{0}, try next port".format(n))
-
-
-        # for i in range(4):
-        #     try:
-        #         self.bluenet.initializeUSB("/dev/ttyACM{0}".format(i))
-        #         self.initialized = True
-        #         break
-        #     except:
-        #         print("coudn't find /dev/ttyACM{0}, trying next port".format(i))
 
         if not self.initialized:
             print("Failed to connect.")
@@ -443,18 +423,12 @@ class Main:
     # implements 'with' interface to enforce timely destruction even when Bluenet wants
     # to stay alive.
     def __enter__(self):
-        # Set up event listeners
-        self.subscriptionId = BluenetEventBus.subscribe(SystemTopics.uartNewPackage, WhatToDoWithUartData)
-        self.subscriptionId = BluenetEventBus.subscribe(UsbTopics.newDataAvailable, WhatToDoWithUartData)
         return self
     
     def __exit__(self, type, value, traceback):
         print("goodbye cruel world")
         pygame.quit()
-        BluenetEventBus.unsubscribe(self.subscriptionId)
-        self.bluenet.stop()
-
-  
+        self.uart.stop()
 
     #actual work for this example
     def run(self):

@@ -62,7 +62,10 @@ class FirmwareState:
                     stringResult += chr(byte)
             statelist = stringResult.split("@")
 
-            statelist[1] = self.classnamefromprettyfunction(statelist[1])
+            try:
+                statelist[1] = self.classnamefromprettyfunction(statelist[1])
+            except:
+                print(stringResult)
 
             self.pushstatevalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
             self.pushhistoryvalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
@@ -159,7 +162,7 @@ class Main:
     def __init__(self):
         # Create the uart connection
         self.uart = CrownstoneUart()
-        self.uart.initialize_usb_sync()
+        self.uart.initialize_usb_sync(port="/dev/ttyACM0")
 
         # create FirmwareState instance - this must be constructed after Bluenet().
         self.fwState = FirmwareState()

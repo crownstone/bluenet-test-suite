@@ -33,6 +33,10 @@ class TestScenario:
         self.guidstr = guidstr
 
     def setComment(self, commentstr):
+        """
+        Sets the default comment string that is appended to the result of executed events.
+        Has effect until clearComment or another setComment overrides the current call.
+        """
         self.currentcomment = commentstr
 
     def clearComment(self):
@@ -45,6 +49,10 @@ class TestScenario:
         self.eventlist += [[event_time, event_func]]
 
     def addEvent(self, event_func):
+        """
+        event_func must be a 0-argument function that returns None on success and
+        a human readible failure message when the event has failed.
+        """
         self.addTimeAndEvent(self.currenttime, event_func)
 
     def wait(self, seconds=0):

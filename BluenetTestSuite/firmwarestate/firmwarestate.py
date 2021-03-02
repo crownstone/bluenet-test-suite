@@ -186,6 +186,7 @@ class Main:
                     run = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
+                        print("current firmware state:")
                         self.fwState.print()
                     if event.key == ord('h'):
                         self.fwState.printhistory()

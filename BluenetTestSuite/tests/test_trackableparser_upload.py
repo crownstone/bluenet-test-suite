@@ -3,17 +3,19 @@ Uploads a single CuckooFilter to the firmware by injecting an event on the bus.
 
 TODO: Expand to test functionality beyond this command.
 """
+import sys
+print(sys.path)
+
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.testframework.scenario import *
 
-def sendUploadCommandOverFirmwareBus(uploadpacket):
-    uint8_t filterId;
-    uint16_t chunkStartIndex;
-    uint16_t totalSize;
-    uint16_t chunkSize;
-    uint8_t chunk[];
+def sendUploadFilterCommandOverFirmwareBus(uploadpacket):
+    # uint8_t filterId;
+    # uint16_t chunkStartIndex;
+    # uint16_t totalSize;
+    # uint16_t chunkSize;
+    # uint8_t chunk[];
     sendEventToCrownstone(0x100 + 190 + 9, uploadpacket)
-
 
 
 def buildScenarioUploadFilterAsSingleChunk(FW):
@@ -24,7 +26,7 @@ def buildScenarioUploadFilterAsSingleChunk(FW):
 
     # a 0-ary lambda returning None should be considered success.
     # TODO: Expand to actual functionality.
-    scenario.addEvent(lambda: None)
+    scenario.addEvent(bind(sendUploadFilterCommandOverFirmwareBus,[]))
 
 def run_all_scenarios(FW):
     fullReset()

@@ -28,6 +28,8 @@ def buildScenarioUploadFilterAsSingleChunk(FW):
     # TODO: Expand to actual functionality.
     scenario.addEvent(bind(sendUploadFilterCommandOverFirmwareBus,[]))
 
+    return scenario
+
 def run_all_scenarios(FW):
     fullReset()
 

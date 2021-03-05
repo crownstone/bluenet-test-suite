@@ -52,7 +52,8 @@ class FirmwareState:
 
     def parse(self, dataPacket):
         """
-        Parses a message from crownstone.
+        Parses a message from crownstone of type UartRxType.FIRMWARESTATE, and calls the installed callbacks
+        in self.onNewEntryParsed
         """
         opCode = dataPacket.opCode
         if opCode == UartRxType.FIRMWARESTATE:

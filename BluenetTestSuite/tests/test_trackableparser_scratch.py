@@ -1,3 +1,8 @@
+"""
+Just a scratch that loads a cuckoo filter into the firmware in sevarl chunks.
+"""
+from crownstone_core.protocol.BluenetTypes import ControlType
+
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
 from crownstone_core.packets.TrackableParser.TrackableParserPackets import *
 from crownstone_core.util.cuckoofilter import *
@@ -15,7 +20,7 @@ filter_data.metadata.version = 45
 filter_data.metadata.profileId = 0
 filter_data.metadata.inputType = FilterInputType.MacAddress
 filter_data.metadata.flags = 0x00
-filter_data.filter = CuckooPacket(my_filter)
+filter_data.filter = my_filter.getData()
 
 print("metadata", len(filter_data.metadata.getPacket()), filter_data.metadata.getPacket())
 print("filter  ", len(filter_data.filter.getPacket()), filter_data.filter.getPacket())
@@ -39,4 +44,4 @@ for start_index in range(0, data_len, max_chunk_size):
     upload_packet.chunk = raw_filter_data[start_index : end_index]
     print(upload_packet.getPacket())
 
-    # sendCommandtoCrownstone(ControlType.TRACKING_FILTER_UPLOAD, upload_packet.getPacket())
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())

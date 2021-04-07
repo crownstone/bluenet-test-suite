@@ -34,4 +34,9 @@ class EventType(IntEnum):
 
     CMD_TEST_SET_TIME             = EventTypeCategory.InternalBaseTests + 0
 
+    CMD_UPLOAD_FILTER = EventTypeCategory.InternalBaseLocalisation + 9
+    CMD_REMOVE_FILTER = EventTypeCategory.InternalBaseLocalisation + 10
+    CMD_COMMIT_FILTER_CHANGES = EventTypeCategory.InternalBaseLocalisation + 11
+    CMD_GET_FILTER_SUMMARIES = EventTypeCategory.InternalBaseLocalisation + 12
+
 

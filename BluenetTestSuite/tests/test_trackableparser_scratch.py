@@ -3,15 +3,19 @@ Just a scratch that loads a cuckoo filter into the firmware in sevarl chunks.
 """
 import time
 
+from BluenetTestSuite.firmwarecontrol.behaviourstore import sendBehaviour, buildTwilight, sendClearBehaviourStoreEvent
 from crownstone_core.protocol.BluenetTypes import ControlType
 from crownstone_core.packets.TrackableParser.TrackableParserPackets import *
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import *
+
+
 from crownstone_core.util.cuckoofilter import *
 
-from crownstone_uart import CrownstoneUart
-from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
+from crownstone_uart import CrownstoneUart, UartEventBus
+from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone, sendEventToCrownstone
 
 from bluenet_logs import BluenetLogs
+from crownstone_uart.topics.SystemTopics import SystemTopics
 
 bluenetLogs = BluenetLogs()
 bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
@@ -42,7 +46,7 @@ def upload(cuckoofilter, max_chunk_size):
     data_len = len(filter_bytes)
     for start_index in range(0, data_len, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
-        print("generating packet chunk ", start_index,"-", end_index)
+        print(" -------- Send packet chunk (EVENT) -------- ", start_index,"-", end_index)
 
         upload_packet = UploadFilterCommandPacket()
         upload_packet.filterId = 1
@@ -52,14 +56,30 @@ def upload(cuckoofilter, max_chunk_size):
         upload_packet.chunk = filter_bytes[start_index : end_index]
         print([hex(x) for x in upload_packet.getPacket()])
 
-        sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
+        sendEventToCrownstone(455, upload_packet.getPacket())
+        time.sleep(1)
+        # sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
+
+def loopbacktest(*args):
+    print("loopback", *args)
+
+def successhandler(*args):
+    print("success handler called", *args)
+
+def failhandler(*args):
+    print("fail handler called", *args)
+
+uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError,failhandler)
+uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
+loopback = UartEventBus.subscribe(SystemTopics.uartWriteData, loopbacktest)
 
 uart = CrownstoneUart()
+
 uart.initialize_usb_sync(port='/dev/ttyACM0')
 print(" ** starting upload **")
 print("---------------------------------")
-
+time.sleep(10)
 upload(cuckoo, max_chunk_size=10)
 
-time.sleep(60)
+time.sleep(30)
 uart.stop()

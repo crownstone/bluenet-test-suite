@@ -22,7 +22,7 @@ bluenetLogs = BluenetLogs()
 bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
 
 # construct cuckoo filter
-cuckoo = CuckooFilter(8, 2)
+cuckoo = CuckooFilter(3, 2)
 some_element = [i % 0x100 for i in range(10)]
 cuckoo.add(some_element)
 

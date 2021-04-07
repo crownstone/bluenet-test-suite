@@ -13,6 +13,7 @@ from crownstone_core.util.cuckoofilter import *
 
 from crownstone_uart import CrownstoneUart, UartEventBus
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone, sendEventToCrownstone
+from BluenetTestSuite.firmwarecontrol.InternalEventCodes import *
 
 from bluenet_logs import BluenetLogs
 from crownstone_uart.topics.SystemTopics import SystemTopics
@@ -30,19 +31,19 @@ print(cuckoo.contains(some_element))
 
 # construct tracking filter
 trackingfilter = TrackingFilterData()
-trackingfilter.metadata.protocol = 1
-trackingfilter.metadata.version = 45
-trackingfilter.metadata.profileId = 0
+trackingfilter.metadata.protocol = 17
+trackingfilter.metadata.version = 4567
+trackingfilter.metadata.profileId = 0xae
 trackingfilter.metadata.inputType = FilterInputType.MacAddress
-trackingfilter.metadata.flags = 0x00
+trackingfilter.metadata.flags = 0b10101010
 trackingfilter.filter = cuckoo.getData()
 
 print("metadata", len(trackingfilter.metadata.getPacket()), trackingfilter.metadata.getPacket())
 print("filter  ", len(trackingfilter.filter.getPacket()), trackingfilter.filter.getPacket())
 print("combined", len(trackingfilter.getPacket()), trackingfilter.getPacket())
 
-def upload(cuckoofilter, max_chunk_size):
-    filter_bytes = cuckoofilter.getPacket()
+def upload(trackingfilter, max_chunk_size):
+    filter_bytes = trackingfilter.getPacket()
     data_len = len(filter_bytes)
     for start_index in range(0, data_len, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
@@ -56,12 +57,9 @@ def upload(cuckoofilter, max_chunk_size):
         upload_packet.chunk = filter_bytes[start_index : end_index]
         print([hex(x) for x in upload_packet.getPacket()])
 
-        sendEventToCrownstone(455, upload_packet.getPacket())
+        sendEventToCrownstone(EventType.CMD_UPLOAD_FILTER, upload_packet.getPacket())
         time.sleep(1)
         # sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
-
-def loopbacktest(*args):
-    print("loopback", *args)
 
 def successhandler(*args):
     print("success handler called", *args)
@@ -71,15 +69,19 @@ def failhandler(*args):
 
 uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError,failhandler)
 uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
-loopback = UartEventBus.subscribe(SystemTopics.uartWriteData, loopbacktest)
 
 uart = CrownstoneUart()
 
 uart.initialize_usb_sync(port='/dev/ttyACM0')
 print(" ** starting upload **")
+
 print("---------------------------------")
 time.sleep(10)
-upload(cuckoo, max_chunk_size=10)
+upload(trackingfilter, max_chunk_size=10)
 
+print("---------------------------------")
+commitCommand = CommitFilterChangesCommandPacket()
+sendEventToCrownstone(EventType.CMD_COMMIT_FILTER_CHANGES, commitCommand.getPacket())
+print("---------------------------------")
 time.sleep(30)
 uart.stop()

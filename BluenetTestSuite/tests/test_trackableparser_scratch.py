@@ -48,6 +48,7 @@ trackingfilter = TrackingFilterData()
 cuckoo = CuckooFilter(3, 2)
 some_element = [i % 0x100 for i in range(10)]
 cuckoo.add(some_element)
+cuckoo.add([0xe7, 0x9b, 0x2d, 0xb7, 0x64, 0xdb][::-1])
 
 trackingfilter.filter = cuckoo.getData()
 

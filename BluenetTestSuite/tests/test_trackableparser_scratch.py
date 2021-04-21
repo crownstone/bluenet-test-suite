@@ -4,7 +4,8 @@ Just a scratch that loads a cuckoo filter into the firmware in sevarl chunks.
 import time
 
 from crownstone_core.packets.TrackableParser.TrackableParserPackets import *
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import RemoveFilterCommandPacket
+from crownstone_core.packets.TrackableParser.TrackableParserCommands import RemoveFilterCommandPacket, \
+    GetFilterSummariesReturnPacket
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import UploadFilterCommandPacket
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import CommitFilterChangesCommandPacket
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import GetFilterSummariesCommandPacket
@@ -20,8 +21,6 @@ from BluenetTestSuite.firmwarecontrol.datatransport import sendEventToCrownstone
 from BluenetTestSuite.firmwarecontrol.InternalEventCodes import *
 
 from bluenet_logs import BluenetLogs
-
-
 
 # ------------------------------
 # construct tracking filter data
@@ -103,7 +102,7 @@ def upload(trackingfilter, filterId, max_chunk_size):
         upload_packet.chunkStartIndex = start_index
         upload_packet.chunk = filter_bytes[start_index : end_index]
         print([hex(x) for x in upload_packet.getPacket()])
-        
+
         sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
         time.sleep(0.5)
 

@@ -8,6 +8,7 @@ from crownstone_core.packets.TrackableParser.TrackableParserCommands import Remo
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import UploadFilterCommandPacket
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import CommitFilterChangesCommandPacket
 from crownstone_core.packets.TrackableParser.TrackableParserCommands import GetFilterSummariesCommandPacket
+from crownstone_core.protocol.BluenetTypes import ControlType
 
 from crownstone_core.util.cuckoofilter import *
 from crownstone_core.util.TrackableParser import MasterCrc, FilterCrc
@@ -102,24 +103,24 @@ def upload(trackingfilter, filterId, max_chunk_size):
         upload_packet.chunkStartIndex = start_index
         upload_packet.chunk = filter_bytes[start_index : end_index]
         print([hex(x) for x in upload_packet.getPacket()])
-
-        sendEventToCrownstone(EventType.CMD_UPLOAD_FILTER, upload_packet.getPacket())
+        
+        sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
         time.sleep(0.5)
-        # sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
+
 
 def remove(filterId):
     removePacket = RemoveFilterCommandPacket(filterId)
-    sendEventToCrownstone(EventType.CMD_REMOVE_FILTER, removePacket.getPacket())
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_REMOVE_FILTER, removePacket.getPacket())
 
 def commit(crc, version):
     commitCommand = CommitFilterChangesCommandPacket()
     commitCommand.masterCrc = crc
     commitCommand.masterVersion = version
-    sendEventToCrownstone(EventType.CMD_COMMIT_FILTER_CHANGES, commitCommand.getPacket())
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_COMMIT_CHANGES, commitCommand.getPacket())
 
 def getStatus():
     statusCommand = GetFilterSummariesCommandPacket()
-    sendEventToCrownstone(EventType.CMD_GET_FILTER_SUMMARIES, statusCommand.getPacket())
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_GET_SUMMARIES, statusCommand.getPacket())
 
 
 # ----------------------------

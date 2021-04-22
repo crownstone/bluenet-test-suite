@@ -26,6 +26,7 @@ from bluenet_logs import BluenetLogs
 # construct tracking filter data
 # ------------------------------
 
+#filterId 1
 cuckoo = CuckooFilter(3, 2)
 cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1])
 
@@ -39,7 +40,7 @@ trackingfilter.metadata.inputType = FilterInputType.MacAddress
 trackingfilter.metadata.flags = 0b10101010
 
 # ---------- another one for testing ----------
-
+#filterId 0
 cuckoo1 = CuckooFilter(4, 4)
 cuckoo1.add([x for x in range (6)])
 
@@ -75,8 +76,20 @@ def successhandler(*args):
 def failhandler(*args):
     print("fail handler called", *args)
 
+def resulthandler(resultpacket):
+    print("resulthandler called")
+    if resultpacket.commandType == ControlType.TRACKABLE_PARSER_GET_SUMMARIES:
+        try:
+            print("loading trackable parser summary")
+            summary = GetFilterSummariesReturnPacket()
+            summary.setPacket(resultpacket.payload)
+            print(summary)
+        except ValueError as e:
+            print("failed to deserialize result", e)
+
 uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError,failhandler)
 uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
+uartresult = UartEventBus.subscribe(SystemTopics.resultPacket, resulthandler)
 
 uart = CrownstoneUart()
 uart.initialize_usb_sync(port='/dev/ttyACM0')

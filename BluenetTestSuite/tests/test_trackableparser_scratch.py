@@ -1,5 +1,6 @@
 """
-Just a scratch that loads a cuckoo filter into the firmware in sevarl chunks.
+Just a scratch that loads a few cuckoo filters into the firmware in chunks,
+then commits them and requests their status.
 """
 import time
 
@@ -13,8 +14,7 @@ from crownstone_core.util.TrackableParser import MasterCrc, FilterCrc
 from crownstone_uart import CrownstoneUart, UartEventBus
 from crownstone_uart.topics.SystemTopics import SystemTopics
 
-from BluenetTestSuite.firmwarecontrol.datatransport import sendEventToCrownstone, sendCommandToCrownstone
-from BluenetTestSuite.firmwarecontrol.InternalEventCodes import *
+from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
 
 from bluenet_logs import BluenetLogs
 
@@ -22,49 +22,38 @@ from bluenet_logs import BluenetLogs
 # construct tracking filter data
 # ------------------------------
 
-#filterId 1
-cuckoo = CuckooFilter(3, 2)
-cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1])
+def filter0():
+    cuckoo = CuckooFilter(3, 2)
+    cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1])
 
-trackingfilter = TrackingFilterData()
-trackingfilter.filter = cuckoo.getData()
+    trackingfilter = TrackingFilterData()
+    trackingfilter.filter = cuckoo.getData()
 
-trackingfilter.metadata.protocol = 17
-trackingfilter.metadata.version = 4567
-trackingfilter.metadata.profileId = 0xae
-trackingfilter.metadata.inputType = FilterInputType.MacAddress
-trackingfilter.metadata.flags = 0b10101010
+    trackingfilter.metadata.protocol = 17
+    trackingfilter.metadata.version = 4567
+    trackingfilter.metadata.profileId = 0xae
+    trackingfilter.metadata.inputType = FilterInputType.MacAddress
+    trackingfilter.metadata.flags = 0b10101010
+    return  trackingfilter
 
-# ---------- another one for testing ----------
-#filterId 0
-cuckoo1 = CuckooFilter(4, 4)
-cuckoo1.add([x for x in range (6)])
+def filter1():
+    cuckoo = CuckooFilter(4, 4)
+    cuckoo.add([x for x in range (6)])
 
-trackingfilter1 = TrackingFilterData()
-trackingfilter1.filter = cuckoo.getData()
+    trackingfilter = TrackingFilterData()
+    trackingfilter.filter = cuckoo.getData()
 
-trackingfilter1.metadata.protocol = 17
-trackingfilter1.metadata.version = 4567
-trackingfilter1.metadata.profileId = 0x1
-trackingfilter1.metadata.inputType = FilterInputType.MacAddress
-trackingfilter1.metadata.flags = 0b10101010
+    trackingfilter.metadata.protocol = 17
+    trackingfilter.metadata.version = 4567
+    trackingfilter.metadata.profileId = 0x1
+    trackingfilter.metadata.inputType = FilterInputType.MacAddress
+    trackingfilter.metadata.flags = 0b10101010
+    return trackingfilter
 
 
-# --------------------------
-# MasterCrc
-# --------------------------
-
-masterCrc = MasterCrc([trackingfilter1, trackingfilter]) # be weary of filter id sorting...
-print("filter crc:", FilterCrc(trackingfilter))
-print("filter crc:", FilterCrc(trackingfilter1))
-print("master crc:", masterCrc)
-
-# --------------------------
-# setup uart stuff
-# --------------------------
-
-bluenetLogs = BluenetLogs()
-bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
+# -------------------------
+# uart message bus handlers
+# -------------------------
 
 def successhandler(*args):
     print("success handler called", *args)
@@ -83,15 +72,6 @@ def resulthandler(resultpacket):
         except ValueError as e:
             print("failed to deserialize result: ", resultpacket)
             print("error:",e)
-
-uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError,failhandler)
-uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
-uartresult = UartEventBus.subscribe(SystemTopics.resultPacket, resulthandler)
-
-uart = CrownstoneUart()
-uart.initialize_usb_sync(port='/dev/ttyACM0')
-time.sleep(10)
-
 
 # -------------------
 # test infrastructure
@@ -140,23 +120,39 @@ def getStatus():
     sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_GET_SUMMARIES, wrapper.getPacket())
 
 
-# ----------------------------
-# execute some commands
-# ----------------------------
+if __name__ == "__main__":
+    # build a few filters
+    trackingfilters = [filter0(), filter1()]
 
-print("------------- upload filter ---------------");
-upload(trackingfilter, filterId = 1,  max_chunk_size=10)
-time.sleep(2)
+    masterCrc = MasterCrc(trackingfilters)  # be weary of filter id sorting...
+    for f in trackingfilters:
+        print("filter crc:", FilterCrc(f))
+    print("master crc:", masterCrc)
 
-print("------------- upload filter ---------------");
-upload(trackingfilter1, filterId = 0,  max_chunk_size=10)
-time.sleep(2)
+    # setup uart stuff
+    bluenetLogs = BluenetLogs()
+    bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
 
-print("------------- commit upload ---------------");
-commit(crc = masterCrc, version = 1)
-time.sleep(2)
+    uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError, failhandler)
+    uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
+    uartresult = UartEventBus.subscribe(SystemTopics.resultPacket, resulthandler)
 
-getStatus()
+    uart = CrownstoneUart()
+    uart.initialize_usb_sync(port='/dev/ttyACM0')
+    time.sleep(10)
 
-time.sleep(60)
-uart.stop()
+    # execute some commands
+    for i, f in enumerate(trackingfilters):
+        print("------------- upload filter ---------------");
+        upload(f, filterId = i,  max_chunk_size=10)
+        time.sleep(2)
+
+    print("------------- commit upload ---------------");
+    commit(crc = masterCrc, version = 1)
+    time.sleep(2)
+
+    getStatus()
+
+    # let it run for a bit
+    time.sleep(60)
+    uart.stop()

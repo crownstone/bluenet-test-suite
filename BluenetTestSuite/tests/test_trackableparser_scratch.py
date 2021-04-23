@@ -4,11 +4,7 @@ Just a scratch that loads a cuckoo filter into the firmware in sevarl chunks.
 import time
 
 from crownstone_core.packets.TrackableParser.TrackableParserPackets import *
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import RemoveFilterCommandPacket, \
-    GetFilterSummariesReturnPacket
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import UploadFilterCommandPacket
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import CommitFilterChangesCommandPacket
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import GetFilterSummariesCommandPacket
+from crownstone_core.packets.TrackableParser.TrackableParserCommands import *
 from crownstone_core.protocol.BluenetTypes import ControlType
 
 from crownstone_core.util.cuckoofilter import *
@@ -80,12 +76,13 @@ def resulthandler(resultpacket):
     print("resulthandler called")
     if resultpacket.commandType == ControlType.TRACKABLE_PARSER_GET_SUMMARIES:
         try:
-            print("loading trackable parser summary")
+            print("deserialize trackable parser summary")
             summary = GetFilterSummariesReturnPacket()
             summary.setPacket(resultpacket.payload)
             print(summary)
         except ValueError as e:
-            print("failed to deserialize result", e)
+            print("failed to deserialize result: ", resultpacket)
+            print("error:",e)
 
 uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError,failhandler)
 uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
@@ -114,32 +111,39 @@ def upload(trackingfilter, filterId, max_chunk_size):
         upload_packet.chunkSize = end_index - start_index
         upload_packet.chunkStartIndex = start_index
         upload_packet.chunk = filter_bytes[start_index : end_index]
-        print([hex(x) for x in upload_packet.getPacket()])
 
-        sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, upload_packet.getPacket())
+        wrapper = TrackableParserCommandWrapper(upload_packet)
+        wrapper.commandProtocolVersion = 0
+
+        sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_UPLOAD_FILTER, wrapper.getPacket())
         time.sleep(0.5)
 
 
 def remove(filterId):
     removePacket = RemoveFilterCommandPacket(filterId)
-    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_REMOVE_FILTER, removePacket.getPacket())
+    wrapper = TrackableParserCommandWrapper(removePacket)
+    wrapper.commandProtocolVersion = 0
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_REMOVE_FILTER, wrapper.getPacket())
 
 def commit(crc, version):
     commitCommand = CommitFilterChangesCommandPacket()
     commitCommand.masterCrc = crc
     commitCommand.masterVersion = version
-    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_COMMIT_CHANGES, commitCommand.getPacket())
+    wrapper = TrackableParserCommandWrapper(commitCommand)
+    wrapper.commandProtocolVersion = 0
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_COMMIT_CHANGES, wrapper.getPacket())
 
 def getStatus():
     statusCommand = GetFilterSummariesCommandPacket()
-    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_GET_SUMMARIES, statusCommand.getPacket())
+    wrapper = TrackableParserCommandWrapper(statusCommand)
+    wrapper.commandProtocolVersion = 0
+    sendCommandToCrownstone(ControlType.TRACKABLE_PARSER_GET_SUMMARIES, wrapper.getPacket())
 
 
 # ----------------------------
 # execute some commands
 # ----------------------------
 
-# for id in [1,5,4]:
 print("------------- upload filter ---------------");
 upload(trackingfilter, filterId = 1,  max_chunk_size=10)
 time.sleep(2)
@@ -150,29 +154,7 @@ time.sleep(2)
 
 print("------------- commit upload ---------------");
 commit(crc = masterCrc, version = 1)
-time.sleep(5)
-
-# getStatus()
-#
-# for id in [4, 1, 5]:
-#     print("------------- upload filter ---------------");
-#     upload(trackingfilter, filterId=id, max_chunk_size=10)
-#     time.sleep(2)
-#
-#     print("------------- commit upload ---------------");
-#     commit()
-#     time.sleep(5)
-#
-# getStatus()
-#
-# for id in [5, 6]:
-#     print("--------------- remove filter ------------------")
-#     remove(filterId=id)
-#     time.sleep(5)
-#
-#     print("---------------commit remove ------------------")
-#     commit()
-#     time.sleep(5)
+time.sleep(2)
 
 getStatus()
 

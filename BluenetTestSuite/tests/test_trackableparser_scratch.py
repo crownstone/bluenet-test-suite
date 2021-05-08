@@ -4,12 +4,16 @@ then commits them and requests their status.
 """
 import time
 
-from crownstone_core.packets.TrackableParser.TrackableParserPackets import *
-from crownstone_core.packets.TrackableParser.TrackableParserCommands import *
+from crownstone_core.packets.assetFilterStore.FilterIOPackets import *
+from crownstone_core.packets.assetFilterStore.FilterDescriptionPackets import *
+
+from crownstone_core.packets.assetFilterStore.FilterMetaDataPackets import *
+from crownstone_core.packets.assetFilterStore.AssetFilterStoreCommands import *
+
 from crownstone_core.protocol.BluenetTypes import ControlType
 
-from crownstone_core.util.cuckoofilter import *
-from crownstone_core.util.TrackableParser import MasterCrc, FilterCrc
+from crownstone_core.util.Cuckoofilter import *
+from crownstone_core.util.AssetFilterStore import MasterCrc, FilterCrc
 
 from crownstone_uart import CrownstoneUart, UartEventBus
 from crownstone_uart.topics.SystemTopics import SystemTopics
@@ -21,6 +25,38 @@ from bluenet_logs import BluenetLogs
 # ------------------------------
 # construct tracking filter data
 # ------------------------------
+
+class myEnum(IntEnum):
+    V= 0
+    W=1
+    def get(self):
+        return int(self)
+    def set(self, v):
+        self._value_ = v
+
+a0 = AdvertisementSubdata()
+a0.type = AdvertisementSubdataType()
+print(a0.getPacket())
+
+a1 = AdvertisementSubdata()
+a1.type = AdvertisementSubdataType.AD_DATA
+print(a1.getPacket())
+
+a2 = AdvertisementSubdata()
+a2.type = AdvertisementSubdataType.MASKED_AD_DATA
+a2.format.loadType()
+a2.format.mask = 0x12345678
+a2_packet = a2.getPacket()
+print(a2_packet)
+
+a3 = AdvertisementSubdata()
+a3.setPacket(a2_packet)
+print(a3)
+
+
+# DEBUG
+quit()
+
 
 def filter0():
     cuckoo = CuckooFilter(3, 2)

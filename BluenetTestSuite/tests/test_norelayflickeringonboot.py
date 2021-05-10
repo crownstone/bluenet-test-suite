@@ -3,7 +3,7 @@ import uuid
 
 from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.firmwarecontrol.datatransport import *
-from BluenetLib.lib.protocol.BluenetTypes import ControlType
+from crownstone_core.protocol.BluenetTypes import ControlType
 
 import datetime
 

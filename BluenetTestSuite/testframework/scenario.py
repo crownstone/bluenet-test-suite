@@ -18,6 +18,7 @@ class TestScenario:
         self.currenttime = None
         self.currentcomment = None
         self.guidstr = ""
+        self.verbosity_override = None
 
     def clearTime(self):
         self.currenttime = None
@@ -33,6 +34,10 @@ class TestScenario:
         self.guidstr = guidstr
 
     def setComment(self, commentstr):
+        """
+        Sets the default comment string that is appended to the result of executed events.
+        Has effect until clearComment or another setComment overrides the current call.
+        """
         self.currentcomment = commentstr
 
     def clearComment(self):
@@ -41,10 +46,20 @@ class TestScenario:
     def getComment(self):
         return "" if self.currentcomment is None else "{0}: {1}".format(self.guidstr, self.currentcomment)
 
+    def setVerbosity(self, verbose):
+        self.verbosity_override = verbose
+
+    def clearVerbosity(self):
+        self.verbosity_override = None
+
     def addTimeAndEvent(self, event_time, event_func):
         self.eventlist += [[event_time, event_func]]
 
     def addEvent(self, event_func):
+        """
+        event_func must be a 0-argument function that returns None on success and
+        a human readible failure message when the event has failed.
+        """
         self.addTimeAndEvent(self.currenttime, event_func)
 
     def wait(self, seconds=0):
@@ -55,6 +70,7 @@ class TestScenario:
         self.addEvent(bind(time.sleep, seconds))
 
     def addExpect(self, classname, variablename, expectedvalue, errormessage=None, verbose=False):
+        verbose = self.verbosity_override if self.verbosity_override is not None else verbose
         errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(
@@ -62,6 +78,7 @@ class TestScenario:
         )
 
     def addExpectAny(self, classname, variablename, expectedvalues, errormessage=None, verbose=False):
+        verbose = self.verbosity_override if self.verbosity_override is not None else verbose
         errormessage = self.getComment() if errormessage is None else errormessage
         formattederrormessage = "Line {0}: {1}".format(getLinenumber(1), errormessage)
         self.addEvent(

@@ -1,0 +1,3 @@
+colorama
+crownstone-core
+crownstone-uart

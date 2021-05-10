@@ -11,10 +11,16 @@ from crownstone_uart import CrownstoneUart
 # E.g.  class TestFramework(unittest.TestCase):
 
 class TestFramework:
+    """
+    Small framework to run and report results of tests. Construct with a test function in a
+    with-as statement for automatic uart initialization and disconnection.
+
+    """
     # construction
     def __init__(self, testfunction):
         """
-        parameter [testfunction] implements the actual test and should return a
+        parameter [testfunction] implements the actual test.
+        It must accept a single parameter of type FirmwareState and return a
         human readable string that represents the result.
         """
         self.test_impl = testfunction

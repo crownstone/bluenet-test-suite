@@ -52,7 +52,8 @@ class FirmwareState:
 
     def parse(self, dataPacket):
         """
-        Parses a message from crownstone.
+        Parses a message from crownstone of type UartRxType.FIRMWARESTATE, and calls the installed callbacks
+        in self.onNewEntryParsed
         """
         opCode = dataPacket.opCode
         if opCode == UartRxType.FIRMWARESTATE:
@@ -62,7 +63,10 @@ class FirmwareState:
                     stringResult += chr(byte)
             statelist = stringResult.split("@")
 
-            statelist[1] = self.classnamefromprettyfunction(statelist[1])
+            try:
+                statelist[1] = self.classnamefromprettyfunction(statelist[1])
+            except:
+                print(stringResult)
 
             self.pushstatevalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
             self.pushhistoryvalue("0x" + statelist[0], statelist[1], statelist[2], statelist[3])
@@ -159,7 +163,7 @@ class Main:
     def __init__(self):
         # Create the uart connection
         self.uart = CrownstoneUart()
-        self.uart.initialize_usb_sync()
+        self.uart.initialize_usb_sync(port="/dev/ttyACM0")
 
         # create FirmwareState instance - this must be constructed after Bluenet().
         self.fwState = FirmwareState()
@@ -186,6 +190,7 @@ class Main:
                     run = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == ord(' '):
+                        print("current firmware state:")
                         self.fwState.print()
                     if event.key == ord('h'):
                         self.fwState.printhistory()

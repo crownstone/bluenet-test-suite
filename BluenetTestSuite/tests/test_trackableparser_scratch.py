@@ -26,23 +26,6 @@ from bluenet_logs import BluenetLogs
 # construct tracking filter data
 # ------------------------------
 
-# a0 = AdvertisementSubdata()
-# a0.type = AdvertisementSubdataType.MAC_ADDRESS
-# print("a0", a0.getPacket())
-#
-# a1 = AdvertisementSubdata()
-# a1.type = AdvertisementSubdataType.AD_DATA
-# print("a1", a1.getPacket())
-#
-# a2 = AdvertisementSubdata()
-# a2.type = AdvertisementSubdataType.MASKED_AD_DATA
-# a2.format.loadType()
-# a2.format.val.mask = 0x12345678 # todo: get rid of .val
-# a2_packet = a2.getPacket()
-# print("a2", a2_packet)
-#
-
-
 def getMetaData():
     id = FilterInputDescription()
     id.format.type = AdvertisementSubdataType.MASKED_AD_DATA
@@ -69,8 +52,10 @@ def cuckoo0():
 
 
 def cuckoo1():
-    cuckoo = CuckooFilter(3, 2)
-    cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1])
+    cuckoo = CuckooFilter(4, 4)
+    for i in range(5):
+        cuckoo.add([(i*6+x) % 0x100 for x in range(6)][::-1])
+
     return cuckoo
 
 
@@ -99,10 +84,6 @@ def failhandler(*args):
     print("fail handler called", *args)
 
 
-    # ASSET_FILTER_UPLOAD              = 110
-    # ASSET_FILTER_REMOVE              = 111
-    # ASSET_FILTER_COMMIT_CHANGES      = 112
-    # ASSET_FILTER_GET_SUMMARIES       = 113
 def resulthandler(resultpacket):
     print("resulthandler called")
     if resultpacket.commandType == ControlType.ASSET_FILTER_GET_SUMMARIES:
@@ -123,6 +104,7 @@ def upload(trackingfilter, filterId, max_chunk_size):
     print(" ** starting upload **")
     filter_bytes = trackingfilter.getPacket()
     data_len = len(filter_bytes)
+    print("total filter bytes:", data_len, " filter crc: ", hex(crc16ccitt(filter_bytes)), " fitlerid: " , filterId)
     for start_index in range(0, data_len, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
         print(" -------- Send packet chunk (EVENT) -------- ", start_index,"-", end_index)
@@ -158,8 +140,8 @@ if __name__ == "__main__":
 
     masterCrc = MasterCrc(trackingfilters)  # be weary of filter id sorting...
     for f in trackingfilters:
-        print("filter crc:", FilterCrc(f))
-    print("master crc:", masterCrc)
+        print("filter crc:", hex(FilterCrc(f)))
+    print("master crc:", hex(masterCrc))
 
     # setup uart stuff
     bluenetLogs = BluenetLogs()

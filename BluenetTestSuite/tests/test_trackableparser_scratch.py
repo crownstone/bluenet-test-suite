@@ -4,16 +4,17 @@ then commits them and requests their status.
 """
 import time
 
-from crownstone_core.packets.assetFilterStore.FilterIOPackets import *
-from crownstone_core.packets.assetFilterStore.FilterDescriptionPackets import *
 
-from crownstone_core.packets.assetFilterStore.FilterMetaDataPackets import *
-from crownstone_core.packets.assetFilterStore.AssetFilterStoreCommands import *
+from crownstone_core.packets.assetFilter.FilterDescriptionPackets import *
+from crownstone_core.packets.assetFilter.FilterIOPackets import *
+from crownstone_core.packets.assetFilter.FilterMetaDataPackets import *
+from crownstone_core.packets.assetFilter.AssetFilterCommands import *
+
+from crownstone_core.util import AssetFilterUtil
+from crownstone_core.util.CRC import crc16ccitt
+from crownstone_core.util.Cuckoofilter import CuckooFilter
 
 from crownstone_core.protocol.BluenetTypes import ControlType
-
-from crownstone_core.util.Cuckoofilter import *
-from crownstone_core.util.AssetFilterStore import MasterCrc, FilterCrc
 
 from crownstone_uart import CrownstoneUart, UartEventBus
 from crownstone_uart.topics.SystemTopics import SystemTopics
@@ -109,12 +110,13 @@ def upload(trackingfilter, filterId, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
         print(" -------- Send packet chunk (EVENT) -------- ", start_index,"-", end_index)
 
-        upload_packet = UploadFilterCommandPacket()
-        upload_packet.filterId = filterId
-        upload_packet.totalSize = data_len
-        upload_packet.chunkSize = end_index - start_index
-        upload_packet.chunkStartIndex = start_index
-        upload_packet.chunk = filter_bytes[start_index : end_index]
+        upload_packet = UploadFilterCommandPacket(
+            filterId=filterId,
+            totalSize=data_len,
+            chunkSize=end_index-start_index,
+            chunkStartIndex=start_index,
+            chunk=filter_bytes[start_index : end_index]
+        )
 
         sendCommandToCrownstone(ControlType.ASSET_FILTER_UPLOAD, upload_packet.getPacket())
         time.sleep(0.5)
@@ -138,9 +140,12 @@ if __name__ == "__main__":
     # build a few filters
     trackingfilters = [filter0(), filter1()]
 
-    masterCrc = MasterCrc(trackingfilters)  # be weary of filter id sorting...
+    # generate filterIds
+    masterCrc = AssetFilterUtil.get_master_crc_from_filters(
+        [AssetFilterAndId(filterId, filter) for filterId, filter in enumerate(trackingfilters)])
+
     for f in trackingfilters:
-        print("filter crc:", hex(FilterCrc(f)))
+        print("filter crc:", hex(AssetFilterUtil.get_filter_crc(f)))
     print("master crc:", hex(masterCrc))
 
     # setup uart stuff
@@ -157,7 +162,7 @@ if __name__ == "__main__":
 
     # execute some commands
     for i, f in enumerate(trackingfilters):
-        print("------------- upload filter ---------------");
+        print(F"------------- upload filter {i} ---------------");
         upload(f, filterId = i,  max_chunk_size=10)
         time.sleep(2)
 

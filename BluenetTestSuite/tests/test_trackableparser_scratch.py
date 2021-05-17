@@ -11,7 +11,7 @@ from crownstone_core.packets.assetFilter.FilterMetaDataPackets import *
 from crownstone_core.packets.assetFilter.AssetFilterCommands import *
 
 from crownstone_core.util import AssetFilterUtil
-from crownstone_core.util.CRC import crc16ccitt
+from crownstone_core.util.CRC import crc32
 from crownstone_core.util.Cuckoofilter import CuckooFilter
 
 from crownstone_core.protocol.BluenetTypes import ControlType
@@ -27,14 +27,17 @@ from bluenet_logs import BluenetLogs
 # construct tracking filter data
 # ------------------------------
 
-def getMetaData():
-    id = FilterInputDescription()
-    id.format.type = AdvertisementSubdataType.MASKED_AD_DATA
 
-    ffmad = FilterFormatMaskedAdData()
-    ffmad.adType = 0xdd
-    ffmad.mask = 0xabcdef12
-    id.format.format.val = ffmad
+# --------- filter 0 --------
+def getMetaData0():
+    id = FilterInputDescription()
+    id.format.type = AdvertisementSubdataType.MAC_ADDRESS
+
+    # id.format.type = AdvertisementSubdataType.MASKED_AD_DATA
+    # ffmad = FilterFormatMaskedAdData()
+    # ffmad.adType = 0xdd
+    # ffmad.mask = 0xabcdef12
+    # id.format.format.val = ffmad
 
     od = FilterOutputDescription()
     od.out_format.type = FilterOutputFormat.MAC_ADDRESS
@@ -48,28 +51,47 @@ def getMetaData():
 
 def cuckoo0():
     cuckoo = CuckooFilter(3, 2)
-    cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1])
+    cuckoo.add([0xac, 0x23, 0x3f, 0x71, 0xca, 0x77][::-1]) # D15N minew beacon on my desk
     return cuckoo
-
-
-def cuckoo1():
-    cuckoo = CuckooFilter(4, 4)
-    for i in range(5):
-        cuckoo.add([(i*6+x) % 0x100 for x in range(6)][::-1])
-
-    return cuckoo
-
 
 def filter0():
     af = AssetFilter()
-    af.metadata = getMetaData()
+    af.metadata = getMetaData0()
     af.filterdata.val = cuckoo0().getData()
     return af
 
+# --------- filter 1 ------------
+def cuckoo1():
+    cuckoo = CuckooFilter(4, 4)
+    # for i in range(5):
+    #     cuckoo.add([(i*6+x) % 0x100 for x in range(6)][::-1])
+    cuckoo.add([0xaa,0xfe,0x10,0xe8,0x01,0x6d,0x69,0x6e,0x65,0x77,0x00])
+
+    return cuckoo
+
+
+def getMetaData1():
+    id = FilterInputDescription()
+    id.format.type = AdvertisementSubdataType.MAC_ADDRESS
+
+    id.format.type = AdvertisementSubdataType.AD_DATA
+    ffad = FilterFormatAdData()
+    ffad.adType = 0x16 # servicedata
+    id.format.format.val = ffad
+
+    od = FilterOutputDescription()
+    od.out_format.type = FilterOutputFormat.MAC_ADDRESS
+
+    fmd = FilterMetaData()
+    fmd.profileId = 0xAE
+    fmd.inputDescription = id
+    fmd.outputDescription = od
+
+    return fmd
 
 def filter1():
     af = AssetFilter()
-    af.metadata = getMetaData()
+    af.metadata = getMetaData1()
     af.filterdata.val = cuckoo1().getData()
     return af
 
@@ -90,7 +112,10 @@ def resulthandler(resultpacket):
     if resultpacket.commandType == ControlType.ASSET_FILTER_GET_SUMMARIES:
         try:
             print("deserialize trackable parser summary")
+            print(resultpacket)
+            print(resultpacket.payload)
             summary = GetFilterSummariesReturnPacket()
+            print(summary)
             summary.setPacket(resultpacket.payload)
             print(summary)
         except ValueError as e:
@@ -105,7 +130,7 @@ def upload(trackingfilter, filterId, max_chunk_size):
     print(" ** starting upload **")
     filter_bytes = trackingfilter.getPacket()
     data_len = len(filter_bytes)
-    print("total filter bytes:", data_len, " filter crc: ", hex(crc16ccitt(filter_bytes)), " fitlerid: " , filterId)
+    print("total filter bytes:", data_len, " filter crc: ", hex(crc32(filter_bytes)), " fitlerid: " , filterId)
     for start_index in range(0, data_len, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
         print(" -------- Send packet chunk (EVENT) -------- ", start_index,"-", end_index)
@@ -138,7 +163,10 @@ def getStatus():
 
 if __name__ == "__main__":
     # build a few filters
-    trackingfilters = [filter0(), filter1()]
+    trackingfilters =[]
+    trackingfilters += [filter0()]
+    trackingfilters += [filter1()]
+
 
     # generate filterIds
     masterCrc = AssetFilterUtil.get_master_crc_from_filters(
@@ -173,5 +201,11 @@ if __name__ == "__main__":
     getStatus()
 
     # let it run for a bit
-    time.sleep(60)
+    try:
+        while True:
+            time.sleep(1)
+            print(" * script still running * ")
+    except:
+        print("escaped while loop")
+
     uart.stop()

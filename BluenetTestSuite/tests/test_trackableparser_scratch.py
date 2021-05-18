@@ -61,23 +61,22 @@ def filter0():
     return af
 
 # --------- filter 1 ------------
-def cuckoo1():
-    cuckoo = CuckooFilter(4, 4)
-    # for i in range(5):
-    #     cuckoo.add([(i*6+x) % 0x100 for x in range(6)][::-1])
-    cuckoo.add([0xaa,0xfe,0x10,0xe8,0x01,0x6d,0x69,0x6e,0x65,0x77,0x00])
-
-    return cuckoo
 
 
 def getMetaData1():
     id = FilterInputDescription()
     id.format.type = AdvertisementSubdataType.MAC_ADDRESS
 
-    id.format.type = AdvertisementSubdataType.AD_DATA
-    ffad = FilterFormatAdData()
-    ffad.adType = 0x16 # servicedata
-    id.format.format.val = ffad
+    # id.format.type = AdvertisementSubdataType.AD_DATA
+    # ffad = FilterFormatAdData()
+    # ffad.adType = 0x16 # servicedata
+    # id.format.format.val = ffad
+
+    id.format.type = AdvertisementSubdataType.MASKED_AD_DATA
+    ffmad = FilterFormatMaskedAdData()
+    ffmad.adType = 0x16  # type == servicedata
+    ffmad.mask = 0xffffffff # mask out 'nothing'
+    id.format.format.val = ffmad
 
     od = FilterOutputDescription()
     od.out_format.type = FilterOutputFormat.MAC_ADDRESS
@@ -88,6 +87,14 @@ def getMetaData1():
     fmd.outputDescription = od
 
     return fmd
+
+def cuckoo1():
+    cuckoo = CuckooFilter(4, 4)
+    # service data (type 0x16) content of one of the advertisements that
+    # the D15N minew beacon broadcasts.
+    cuckoo.add([0xaa,0xfe,0x10,0xe8,0x01,0x6d,0x69,0x6e,0x65,0x77,0x00])
+
+    return cuckoo
 
 def filter1():
     af = AssetFilter()

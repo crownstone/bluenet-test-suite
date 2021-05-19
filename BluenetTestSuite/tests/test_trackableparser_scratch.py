@@ -103,22 +103,58 @@ def filter1():
     return af
 
 
+
+# ------------ Alex' filter -----------
+
+
+def getMetaDataAlex():
+    id = FilterInputDescription()
+    id.format.type = AdvertisementSubdataType.MASKED_AD_DATA
+    ffmad = FilterFormatMaskedAdData()
+    ffmad.adType = 0xFF
+    ffmad.mask = 0b11
+    id.format.format.val = ffmad
+
+    od = FilterOutputDescription()
+    od.out_format.type = FilterOutputFormat.MAC_ADDRESS
+
+    fmd = FilterMetaData()
+    fmd.profileId = 0xFF
+    fmd.inputDescription = id
+    fmd.outputDescription = od
+
+    return fmd
+
+def cuckooAlex():
+    cuckoo = CuckooFilter(0, 2)
+    cuckoo.add([0xcd, 0x09])
+    cuckoo.add([0xcd, 0x09][::-1])
+    return cuckoo
+
+def filterAlex():
+    af = AssetFilter()
+    af.metadata = getMetaDataAlex()
+    af.filterdata.val = cuckooAlex().getData()
+    return af
+
 # -------------------------
 # uart message bus handlers
 # -------------------------
 
 def successhandler(*args):
-    print("success handler called", *args)
+    #print("success handler called", *args)
+    pass
 
 def failhandler(*args):
-    print("fail handler called", *args)
-
+    # print("fail handler called", *args)
+    pass
 
 def resulthandler(resultpacket):
     print("resulthandler called")
     if resultpacket.commandType == ControlType.ASSET_FILTER_GET_SUMMARIES:
         try:
             print("deserialize trackable parser summary")
+            return
             print(resultpacket)
             print(resultpacket.payload)
             summary = GetFilterSummariesReturnPacket()
@@ -171,8 +207,9 @@ def getStatus():
 if __name__ == "__main__":
     # build a few filters
     trackingfilters =[]
-    trackingfilters += [filter0()]
-    trackingfilters += [filter1()]
+    # trackingfilters += [filter0()]
+    # trackingfilters += [filter1()]
+    trackingfilters += [filterAlex()]
 
 
     # generate filterIds

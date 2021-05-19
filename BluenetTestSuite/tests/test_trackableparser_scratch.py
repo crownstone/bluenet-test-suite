@@ -151,11 +151,10 @@ def failhandler(*args):
 
 def resulthandler(resultpacket):
     print("resulthandler called")
+    print(resultpacket)
     if resultpacket.commandType == ControlType.ASSET_FILTER_GET_SUMMARIES:
         try:
             print("deserialize trackable parser summary")
-            return
-            print(resultpacket)
             print(resultpacket.payload)
             summary = GetFilterSummariesReturnPacket()
             print(summary)

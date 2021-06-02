@@ -1,11 +1,13 @@
 # import unittest
 import uuid
-
 from colorama import Fore, Back, Style
+import logging
+
+from bluenet_logs import BluenetLogs
+from crownstone_uart import CrownstoneUart
 
 from BluenetTestSuite.firmwarestate.firmwarestate import *
 
-from crownstone_uart import CrownstoneUart
 
 # TODO: Convert to unittest library so that tests can be automatically discovered / executed
 # E.g.  class TestFramework(unittest.TestCase):
@@ -26,6 +28,12 @@ class TestFramework:
         self.test_impl = testfunction
 
         # Create the uart connection
+        self.bluenetLogs = BluenetLogs()
+        self.bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
+        #
+        # for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]:
+        #     logger.setLevel(logging.INFO)
+
         self.uart = CrownstoneUart()
 
 

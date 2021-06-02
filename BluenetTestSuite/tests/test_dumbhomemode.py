@@ -35,7 +35,7 @@ def buildDumbScenario(FW):
     scenario.addExpect("TwilightHandler", "isActive", "False", "twilight handler should be inactive when dumb")
 
     # loops through all hours to check if everything is as dumb at all times.
-    for hour in range (24):
+    for hour in range (0,24,3):
         scenario.setTime(hour, 0)
 
         scenario.setComment("nothing should happen in dumb home mode, all states must be empty, aggregated 0 or possibly -1")

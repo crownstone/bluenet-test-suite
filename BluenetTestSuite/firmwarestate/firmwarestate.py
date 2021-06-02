@@ -2,7 +2,9 @@ import time, inspect, sys
 
 import datetime
 import pprint
+from colorama import Fore, Style
 
+from bluenet_logs import BluenetLogs
 from crownstone_uart import CrownstoneUart
 from crownstone_uart.core.UartEventBus import UartEventBus
 from crownstone_uart.core.uart.UartTypes import UartRxType
@@ -61,6 +63,8 @@ class FirmwareState:
             for byte in dataPacket.payload:
                 if byte < 128:
                     stringResult += chr(byte)
+
+            print("{0}firmware state update: {2}{1}".format(Fore.LIGHTBLACK_EX,Style.RESET_ALL,stringResult))
             statelist = stringResult.split("@")
 
             try:
@@ -166,6 +170,8 @@ class Main:
         self.uart.initialize_usb_sync(port="/dev/ttyACM0")
 
         # create FirmwareState instance - this must be constructed after Bluenet().
+        self.bluenetLogs = BluenetLogs()
+        self.bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
         self.fwState = FirmwareState()
 
         pygame.init()
@@ -178,6 +184,7 @@ class Main:
     
     def __exit__(self, typ, value, traceback):
         pygame.quit()
+        self.uart.stop()
 
     def run(self):
         print("firmwarestate up and running")
@@ -202,3 +209,4 @@ if __name__ == "__main__":
     import pygame  # used for nice keyboard input when used as stand alone script
     with Main() as m:
         m.run()
+    print("exiting firmwarestate inspector")

@@ -1,4 +1,6 @@
+import datetime
 from time import time
+from colorama import Fore, Back, Style
 
 from BluenetTestSuite.testframework.events import *
 from BluenetTestSuite.firmwarecontrol.utils import *
@@ -102,8 +104,12 @@ class TestScenario:
 
             if t is not None:
                 if t != previous_t and t >= 0:
+                    if self.verbosity_override:
+                        print("{3}TestSuite setTime: {0} ({1:0>2}:{2:0>2}h). sleeping 1 sec.{4}".format(t, (t // 3600) % 24, (t % 3600) // 60, Fore.LIGHTCYAN_EX, Style.RESET_ALL))
                     setTime_uint32(t)
-                    print("setTime called: {0} ({1:0>2}:{2:0>2}h).".format(t, (t // 3600) % 24, (t % 3600) // 60))
+
+            if self.verbosity_override:
+                print("{0}TestSuite execute event{1}".format(Fore.LIGHTCYAN_EX,Style.RESET_ALL))
 
             response = evt()
 

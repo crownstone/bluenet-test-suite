@@ -4,7 +4,6 @@ from enum import IntEnum
 class EventTypeCategory(IntEnum):
     StateBase                     = 0x000
     InternalBase                  = 0x100
-    InternalBaseTests = 0xF000,
     InternalBaseBluetooth         = InternalBase + 0
     InternalBaseSwitch            = InternalBase + 20
     InternalBasePower             = InternalBase + 40
@@ -16,6 +15,7 @@ class EventTypeCategory(IntEnum):
     InternalBaseBehaviour         = InternalBase + 170
     InternalBaseLocalisation      = InternalBase + 190
     InternalBaseSystem            = InternalBase + 210
+    InternalBaseTests             = 0xF000,
 
 # corresponds with CS_TYPE
 class EventType(IntEnum):
@@ -32,11 +32,13 @@ class EventType(IntEnum):
     CMD_DIMMING_ALLOWED           = EventTypeCategory.InternalBaseSwitch + 8
     CMD_SWITCH_AGGREGATOR_RESET   = EventTypeCategory.InternalBaseSwitch + 9
 
-    CMD_TEST_SET_TIME             = EventTypeCategory.InternalBaseTests + 0
+    CMD_SET_TIME                  = EventTypeCategory.InternalBaseSystem + 2
 
     CMD_UPLOAD_FILTER = EventTypeCategory.InternalBaseLocalisation + 9
     CMD_REMOVE_FILTER = EventTypeCategory.InternalBaseLocalisation + 10
     CMD_COMMIT_FILTER_CHANGES = EventTypeCategory.InternalBaseLocalisation + 11
     CMD_GET_FILTER_SUMMARIES = EventTypeCategory.InternalBaseLocalisation + 12
+
+    CMD_TEST_SET_TIME             = EventTypeCategory.InternalBaseTests + 0
 
 

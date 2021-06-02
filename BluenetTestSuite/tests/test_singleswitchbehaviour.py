@@ -9,6 +9,7 @@ from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 
 
 def common_setup():
+    print("sendClearBehaviourStoreEvent")
     sendClearBehaviourStoreEvent()
     time.sleep(5) # clearing the store takes a bit more time maybe
 
@@ -34,7 +35,7 @@ def add_common_setup(scenario):
 # Definition of the scenarios
 # ----------------------------------------------------------------------------------------------------------------------
 
-def build_scenario_0(FW):
+def build_scenario_0(FW, verbosity=None):
     """
     Returns a list of 2-lists: [time, 0ary function] that describes exactly
     what needs to be executed when. The 0ary functions return a falsey value
@@ -46,10 +47,14 @@ def build_scenario_0(FW):
         sendBehaviour(1, buildTwilight          (11, 15, 60))
         sendBehaviour(2, buildSwitchBehaviour   (13, 15, 100))
         sendBehaviour(3, buildSwitchBehaviour   (14, 15, 30))
+        print("end of setup_scenario")
 
     scenario = TestScenario(FW, "scenario 0")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # behaviour 0 becomes active
     scenario.setTime(9, 0)
@@ -86,7 +91,7 @@ def build_scenario_0(FW):
     return scenario
 
 
-def build_scenario_1(FW):
+def build_scenario_1(FW, verbosity=None):
     """
     This scenario tests if a switchcraft induced override with value zero
     will 'mute' a subsequent switching behaviour.
@@ -103,6 +108,9 @@ def build_scenario_1(FW):
     scenario = TestScenario(FW, "scenario 1")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # twilight becomes active
     scenario.setTime(9, 0)
@@ -134,7 +142,7 @@ def build_scenario_1(FW):
     return scenario
 
 
-def build_scenario_2(FW):
+def build_scenario_2(FW, verbosity=None):
     """
     This scenario tests if a switchcraft induced override with value 0 is cleared
     when all switching behaviours become inactive.
@@ -157,6 +165,9 @@ def build_scenario_2(FW):
     scenario = TestScenario(FW, "scenario 2")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario_2)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # behaviour 0, twilight, becomes active, nothing happens.
     scenario.setTime(9, 0)
@@ -203,7 +214,7 @@ def build_scenario_2(FW):
     return scenario
 
 
-def build_scenario_3(FW):
+def build_scenario_3(FW, verbosity=None):
     """
     Tests if override is cleared when all switch behaviours go out of scope.
     And tests switch command with opaque value.
@@ -220,6 +231,9 @@ def build_scenario_3(FW):
     scenario = TestScenario(FW, "scenario 3")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario_3)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # behaviours both become active
     scenario.setTime(9, 0)
@@ -242,7 +256,7 @@ def build_scenario_3(FW):
     return scenario
 
 
-def build_scenario_4(FW):
+def build_scenario_4(FW, verbosity=None):
     """
     Opaque switch command induces override should be cleared when behaviour turns
     off.
@@ -255,6 +269,9 @@ def build_scenario_4(FW):
     scenario = TestScenario(FW, "scenario 4")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     scenario.setTime(10, 0)
     scenario.addEvent(bind(sendSwitchCommand, 50))
@@ -275,7 +292,7 @@ def build_scenario_4(FW):
     return scenario
 
 
-def build_scenario_5(FW):
+def build_scenario_5(FW, verbosity=None):
     """
     Opaque switch command induces override should be cleared when behaviour turns
     off.
@@ -288,6 +305,9 @@ def build_scenario_5(FW):
     scenario = TestScenario(FW, "scenario 5")
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # switch behaviour becomes active
     scenario.setTime(9, 0)
@@ -322,7 +342,7 @@ def build_scenario_5(FW):
     return scenario
 
 
-def build_scenario_7(FW):
+def build_scenario_7(FW, verbosity=None):
     """
     Translucent switch commands use resolved behaviour intensity when there are active ones.
 
@@ -333,8 +353,12 @@ def build_scenario_7(FW):
         sendBehaviour(0, buildSwitchBehaviour(9, 12, 80))
 
     scenario = TestScenario(FW, "scenario 7")
+
     add_common_setup(scenario)
     scenario.addEvent(setup_scenario)
+
+    if verbosity is not None:
+        scenario.setVerbosity(verbosity)
 
     # switch behaviour becomes active
     scenario.setTime(9, 0)
@@ -376,14 +400,15 @@ def run_all_scenarios(FW):
 
     result = []
 
+    verby = False
     scenarios = [
-        build_scenario_0(FW),
-        build_scenario_1(FW),
-        build_scenario_2(FW),
-        build_scenario_3(FW),
-        build_scenario_4(FW),
-        build_scenario_5(FW),
-        build_scenario_7(FW),
+        build_scenario_0(FW,verbosity=verby),
+        build_scenario_1(FW,verbosity=verby),
+        build_scenario_2(FW,verbosity=verby),
+        build_scenario_3(FW,verbosity=verby),
+        build_scenario_4(FW,verbosity=verby),
+        build_scenario_5(FW,verbosity=verby),
+        build_scenario_7(FW,verbosity=verby),
     ]
 
     for scenario in scenarios:

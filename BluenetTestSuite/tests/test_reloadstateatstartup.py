@@ -18,7 +18,7 @@ from BluenetTestSuite.testframework.framework import *
 from BluenetTestSuite.firmwarecontrol.datatransport import *
 from BluenetTestSuite.firmwarecontrol.behaviourstore import *
 from BluenetTestSuite.testframework.events import expect
-from BluenetLib.lib.protocol.BluenetTypes import ControlType
+
 
 
 def test_bootloadsflashintooverride_loopbody(FW, intensity):

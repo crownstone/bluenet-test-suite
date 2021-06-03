@@ -220,9 +220,9 @@ def getMetaDataExactExclude():
     _output.out_format.type = FilterOutputFormat.MAC_ADDRESS
 
     _meta = FilterMetaData()
-    _meta.profileId = 0xAE
+    _meta.profileId = 0
     _meta.type = FilterType.EXACT_MATCH
-    _meta.flags = 0b00000001
+    _meta.flags = 0b00000001 # last bit indicates 'exclude'
     _meta.inputDescription = _input
     _meta.outputDescription = _output
 
@@ -323,7 +323,7 @@ def uploadFilters():
     # trackingfilters.append(filter0())
     # trackingfilters.append(filter1())
     # trackingfilters.append(filterAlex())
-    trackingfilters.append(filterBlyott())
+    # trackingfilters.append(filterBlyott())
     trackingfilters.append(filterExactExclude())
 
     # generate filterIds

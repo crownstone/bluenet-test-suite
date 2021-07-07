@@ -147,7 +147,15 @@ def filterAlex():
 # ----------------- exact match filter ----------------------
 
 
-def getMetaDataExact():
+def exactFilter():
+    filly = ExactMatchFilterData(itemCount=2,itemSize=6)
+    filly.itemArray.val = []
+    filly.itemArray.val += [int(x, 16) for x in "60:c0:bf:28:0d:ae".split(":")]
+    filly.itemArray.val += [int(x, 16) for x in "60:c0:bf:28:0d:ae".split(":")][::-1]
+    return filly
+
+
+def getMetaDataExactMacOut():
     id = FilterInputDescription()
     id.format.type = AdvertisementSubdataType.MAC_ADDRESS
 
@@ -155,22 +163,45 @@ def getMetaDataExact():
     od.out_format.type = FilterOutputFormat.MAC_ADDRESS
 
     fmd = FilterMetaData()
-    fmd.profileId = 0xAE
+    fmd.profileId = 0x05
     fmd.type = FilterType.EXACT_MATCH
     fmd.inputDescription = id
     fmd.outputDescription = od
 
     return fmd
 
-def exactFilter():
-    filly = ExactMatchFilterData(itemCount=2,itemSize=6)
-    filly.itemArray.val = []
-    filly.itemArray.val += [int(x, 16) for x in "60:c0:bf:28:0d:ae".split(":")] # [::-1]
-    return filly
 
-def filterExact():
+def getMetaDataExactShortIdOut():
+    id = FilterInputDescription()
+    id.format.type = AdvertisementSubdataType.MAC_ADDRESS
+
+    ## BUG: od is not serialized to [1,0].
+    od = FilterOutputDescription()
+    # print("od", od.__dict__, od.getPacket())
+    od.out_format.type = FilterOutputFormat.SHORT_ASSET_ID
+    # print("od", od.__dict__, od.getPacket())
+    od.in_format.loadType()
+    od.in_format.val.type = AdvertisementSubdataType.MAC_ADDRESS
+    print("od", od.__dict__, od.getPacket())
+
+    fmd = FilterMetaData()
+    fmd.profileId = 0x05
+    fmd.type = FilterType.EXACT_MATCH
+    fmd.inputDescription = id
+    fmd.outputDescription = od
+
+    print("fmd: ", fmd.getPacket())
+    return fmd
+
+def filterExactMacOut():
     af = AssetFilter()
-    af.metadata = getMetaDataExact()
+    af.metadata = getMetaDataExactMacOut()
+    af.filterdata.val = exactFilter()
+    return af
+
+def filterExactShortIdOut():
+    af = AssetFilter()
+    af.metadata = getMetaDataExactShortIdOut()
     af.filterdata.val = exactFilter()
     return af
 
@@ -324,7 +355,9 @@ def uploadFilters():
     # trackingfilters.append(filter1())
     # trackingfilters.append(filterAlex())
     # trackingfilters.append(filterBlyott())
-    trackingfilters.append(filterExactExclude())
+    # trackingfilters.append(filterExactMacOut())
+    trackingfilters.append(filterExactShortIdOut())
+    # trackingfilters.append(filterExactExclude())
 
     # generate filterIds
     masterCrc = AssetFilterUtil.get_master_crc_from_filters(

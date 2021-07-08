@@ -175,14 +175,10 @@ def getMetaDataExactShortIdOut():
     id = FilterInputDescription()
     id.format.type = AdvertisementSubdataType.MAC_ADDRESS
 
-    ## BUG: od is not serialized to [1,0].
     od = FilterOutputDescription()
-    # print("od", od.__dict__, od.getPacket())
-    od.out_format.type = FilterOutputFormat.SHORT_ASSET_ID
-    # print("od", od.__dict__, od.getPacket())
+    od.out_format = FilterOutputFormat.SHORT_ASSET_ID
     od.in_format.loadType()
     od.in_format.val.type = AdvertisementSubdataType.MAC_ADDRESS
-    print("od", od.__dict__, od.getPacket())
 
     fmd = FilterMetaData()
     fmd.profileId = 0x05

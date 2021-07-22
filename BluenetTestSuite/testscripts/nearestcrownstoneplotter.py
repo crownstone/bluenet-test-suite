@@ -2,10 +2,9 @@
 This is a utility wrapper for the firmware RssiDataTracker class, which pushes its information
 to the FirmwareState tracker.
 """
-from statistics import mean, median
 from itertools import combinations, chain, combinations_with_replacement
-import time
 from functools import singledispatch
+import time
 import datetime
 from queue import Queue
 from sys import stdout
@@ -32,24 +31,10 @@ from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrow
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 
 
-
-@singledispatch
-def handleIncomingPacket(msg):
-    raise NotImplementedError("Only available for arguments with registered overridde")
-
-@handleIncomingPacket.register
-def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate):
-    print("NearestCrownstoneTrackingUpdate")
-
-@handleIncomingPacket.register
-def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout):
-    print("NearestCrownstoneTrackingTimeout")
-
-@handleIncomingPacket.register
-def handleAssetMacRssiReport(msg : AssetMacReport):
-    print("AssetMacReport")
-
-
+class PlotterQueueObject:
+    def __init__(self, msg):
+        self.msg = msg
+        self.timestamp = datetime.datetime.now()
 
 class NearestCrownstoneAlgorithmPlotter:
     """
@@ -67,7 +52,7 @@ class NearestCrownstoneAlgorithmPlotter:
         self.refreshRateMs = refreshRateMs
 
     def putMessageOnQueue(self, msg):
-        self.plottingQueue.put(msg)
+        self.plottingQueue.put(PlotterQueueObject(msg))
 
     def processPlottingQueue(self):
         """
@@ -78,19 +63,8 @@ class NearestCrownstoneAlgorithmPlotter:
         """
         print(F" *** Processing Plotting Queue *** ({self.plottingQueue.qsize()})")
         while not self.plottingQueue.empty():
-            evt = self.plottingQueue.get()
-            continue
-
-            sender = evt.sender
-            receiver = evt.receiver
-
-            stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, self.rssistreams), default=None)
-
-            if stream is None:
-                stream = RssiStream(sender, receiver)
-                self.rssistreams.append(stream)
-
-            stream.addNewEntry(evt.timestamp, evt.rssivalue)
+            plottingQueueObject = self.plottingQueue.get()
+            handlePlottingQueueObject(plottingQueueObject.msg, plottingQueueObject.timestamp, self)
 
     def removeOldEntriesFromStreams(self):
         now = datetime.datetime.now()
@@ -101,6 +75,43 @@ class NearestCrownstoneAlgorithmPlotter:
 
     def getTitle(self):
         return "Nearest Crownstone Algorithm Plot"
+
+
+
+@singledispatch
+def handlePlottingQueueObject(msg, plotter):
+    raise NotImplementedError("Only available for arguments with registered overridde")
+
+@handlePlottingQueueObject.register
+def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
+    print("NearestCrownstoneTrackingUpdate ", timestamp)
+    sender = msg.assetId
+    receiver = msg.crownstoneId
+    rssi = msg.rssi
+    channel = msg.channel
+
+    # TODO: equality check probably fails as sender is PacketBaseList(val: [1, 0, 0], cls: <class 'crownstone_core.util.BasePackets.Uint8'>, len: 3)
+    # (this will check on object id rather than content.)
+    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.rssistreams), None)
+
+    if stream is None:
+
+        print("adding new stream object for pair: ", sender, receiver)
+        stream = RssiStream(sender, receiver)
+        plotter.rssistreams.append(stream)
+
+    stream.addNewEntry(timestamp, rssi)
+
+
+@handlePlottingQueueObject.register
+def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, plotter: NearestCrownstoneAlgorithmPlotter):
+    print("NearestCrownstoneTrackingTimeout")
+
+@handlePlottingQueueObject.register
+def handleAssetMacRssiReport(msg : AssetMacReport, plotter: NearestCrownstoneAlgorithmPlotter):
+    print("AssetMacReport")
+
+
 
 
 class NearestCrownstoneLogger(Thread):

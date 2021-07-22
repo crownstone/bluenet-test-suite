@@ -1,0 +1,275 @@
+"""
+This is a utility wrapper for the firmware RssiDataTracker class, which pushes its information
+to the FirmwareState tracker.
+"""
+from statistics import mean, median
+from itertools import combinations, chain, combinations_with_replacement
+import time
+from functools import singledispatch
+import datetime
+from queue import Queue
+from sys import stdout
+from threading import Thread
+
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.animation as animation
+import matplotlib
+matplotlib.use('TkAgg')
+
+from BluenetTestSuite.utils.setup import *
+from BluenetTestSuite.utils.rssistream import *
+
+
+from crownstone_uart import UartEventBus
+from crownstone_uart.topics.SystemTopics import SystemTopics
+
+from crownstone_uart.core.uart.UartTypes import UartRxType
+from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
+
+from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
+from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingTimeout
+from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
+
+
+
+@singledispatch
+def handleIncomingPacket(msg):
+    raise NotImplementedError("Only available for arguments with registered overridde")
+
+@handleIncomingPacket.register
+def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate):
+    print("NearestCrownstoneTrackingUpdate")
+
+@handleIncomingPacket.register
+def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout):
+    print("NearestCrownstoneTrackingTimeout")
+
+@handleIncomingPacket.register
+def handleAssetMacRssiReport(msg : AssetMacReport):
+    print("AssetMacReport")
+
+
+
+class NearestCrownstoneAlgorithmPlotter:
+    """
+    This class is responsible for decoupling the Uart thread from the plotting thread by means of a queue.
+    Further it passively keeps track of the plotting information. How to visualize the data is left to the user
+    of the class.
+    """
+
+    def __init__(self, plottingtimewindow_seconds, refreshRateMs):
+        self.rssistreams = [] # a list of RssiStream objects, sender == asset, receiver == crownstoneid
+        self.plottingQueue = Queue()
+        self.loggingQueue = Queue()
+
+        self.plotwindow_width = datetime.timedelta(seconds=plottingtimewindow_seconds)
+        self.refreshRateMs = refreshRateMs
+
+    def putMessageOnQueue(self, msg):
+        self.plottingQueue.put(msg)
+
+    def processPlottingQueue(self):
+        """
+        Updates the rssi stream according to the new events.
+        Should be called before each frame update.
+
+        Terminates when the plotting queue is empty
+        """
+        print(F" *** Processing Plotting Queue *** ({self.plottingQueue.qsize()})")
+        while not self.plottingQueue.empty():
+            evt = self.plottingQueue.get()
+            continue
+
+            sender = evt.sender
+            receiver = evt.receiver
+
+            stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, self.rssistreams), default=None)
+
+            if stream is None:
+                stream = RssiStream(sender, receiver)
+                self.rssistreams.append(stream)
+
+            stream.addNewEntry(evt.timestamp, evt.rssivalue)
+
+    def removeOldEntriesFromStreams(self):
+        now = datetime.datetime.now()
+        time_minimum = now - self.plotwindow_width
+
+        for stream in self.rssistreams:
+            stream.removeOldEntries(time_minimum)
+
+    def getTitle(self):
+        return "Nearest Crownstone Algorithm Plot"
+
+
+class NearestCrownstoneLogger(Thread):
+    def __init__(self, outputfilename=None):
+        super(NearestCrownstoneLogger, self).__init__()
+        self.loggingQueue = Queue()
+
+        self.trackerfilename = outputfilename
+        self.trackerfile = None
+        self.isRunning = True
+
+    def putMessageOnQueue(self, msg):
+        self.loggingQueue.put(msg)
+
+    def processLoggingQueue(self):
+        """
+        logs the queued items to the trackerfile.
+        terminates when the queue is empty.
+        """
+        print(F" *** Processing Logging Queue *** ({self.loggingQueue.qsize()})")
+        self.open_logging_file()
+
+        while not self.loggingQueue.empty():
+            evt = self.loggingQueue.get()
+            print(evt, file=self.trackerfile)
+
+        self.close_logging_file()
+
+    def run(self):
+        self.open_logging_file()
+        print("# ", "Tracker file created on: ", datetime.datetime.now(), file=self.trackerfile)
+        self.close_logging_file()
+        time.sleep(0.2)
+
+        while self.isRunning:
+            self.processLoggingQueue()
+            time.sleep(0.2)
+
+    def open_logging_file(self):
+        # default to stdout if no filename is given.
+        self.trackerfile = open(self.trackerfilename, "w+", ) if self.trackerfilename else stdout
+
+    def close_logging_file(self):
+        self.trackerfile.flush()
+
+        if self.trackerfilename is not None:
+            self.trackerfile.close()
+
+class Main:
+    def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250):
+        # initialize uart
+        self.crownstoneUart = setupCrownstoneUart()
+        self.crownstoneLogs = setupCrownstoneLogs()
+
+        self.uartMsgSubscription = UartEventBus.subscribe(SystemTopics.uartNewMessage, lambda msg: self.uartmsghandler(msg))
+
+        # general plotting parameters
+        self.logger = NearestCrownstoneLogger(outputfilename)
+        self.plotter = NearestCrownstoneAlgorithmPlotter(plottingtimewindow_seconds, refreshRateMs)
+
+    def __enter__(self):
+        self.logger.start()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.logger.isRunning = False
+        self.crownstoneUart.stop()
+
+    ### incoming Uart messages
+
+    def uartmsghandler(self, msg: UartMessagePacket):
+        """
+        Construct object from uart message and put it on the logger/plotter queues.
+        """
+        typemap = {
+            UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE: NearestCrownstoneTrackingUpdate,
+            UartRxType.NEAREST_CROWNSTONE_TRACKING_TIMEOUT: NearestCrownstoneTrackingTimeout,
+            UartRxType.ASSET_MAC_RSSI_REPORT: UartRxType.ASSET_MAC_RSSI_REPORT
+        }
+
+        packettype = typemap.get(msg.opCode, None)
+
+        if packettype is not None:
+            print(f"Received {packettype} {str(msg.opCode)}: {msg.payload}")
+            packet = packettype()
+            packet.setPacket(msg.payload)
+            self.logger.putMessageOnQueue(packet)
+            self.plotter.putMessageOnQueue(packet)
+
+    ### Plotting
+
+    def updatePlotData(self, i, fig, axs_flat):
+        """
+        Processes queue for plotting.
+        Prepares data for the plot.
+        Plot.
+        """
+        self.plotter.processPlottingQueue()
+        self.plotter.removeOldEntriesFromStreams()
+
+        # title and format
+        fig.suptitle(self.plotter.getTitle(), fontsize=12)
+
+        for ax in axs_flat:
+            ax.set_title("hi")
+            ax.plot()
+        return
+
+        myFmt = mdates.DateFormatter('%H:%M:%S')
+
+        # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
+        # we have at most six subplots.
+        ax_index = 0
+        axs_dict = dict()
+        for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
+            axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
+            ax_index += 1
+            if ax_index >= len(axs_flat):
+                break
+
+        # loop over the available data per crownstone pair
+        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
+            if i_j not in axs_dict:
+                # can't plot if there is no axis for it. (will happen for the 5th crownstone)
+                break
+
+            # label subplot with the pair id.
+            ax = axs_dict[i_j]
+            ax.clear()
+            ax.set_title(' -> '.join(sorted(i_j)))
+            ax.set_xlabel("time(s)")
+            ax.set_xlim(time_minimum, now)
+            ax.xaxis.set_major_formatter(myFmt) # formats the x-axis ticks
+            ax.format_xdata = myFmt # formats the on-hover message box
+
+            # reduce number of ticks on x-axis
+            ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+
+            ax.set_ylabel("rssi(dB)")
+
+            # loop over all channels on this pair of crownstones and plot each as a separate line.
+            for channel, rssiStream in channelToStreamDict.items():
+                ax.plot(rssiStream.times, rssiStream.rssis,
+                        marker='o', markersize=3,
+                        label="ch: {0}".format(channel))
+
+
+    def run(self):
+        """
+        Method will set up an animation and run it.
+        In parallel it will record the data to file.
+        """
+        fig, axs = plt.subplots(1, 1, sharex=True)
+
+        # axs is a 2d list. 1d lists are easier to iterate, so thats axs_flat.
+        axs_flat = [axs] # 1,1  results in axs not being wrapped in a list...
+        # axs_flat = list(chain.from_iterable(axs))
+
+        ani = animation.FuncAnimation(fig,
+                                      lambda i: self.updatePlotData(i, fig, axs_flat),
+                                      interval=self.plotter.refreshRateMs)
+        # plt.ion()
+        plt.show()
+
+        while True:
+            self.logger.processLoggingQueue()
+            time.sleep(0.1)
+
+if __name__ == "__main__":
+    with Main(outputfilename=None, plottingtimewindow_seconds=60) as m:
+        m.run()
+

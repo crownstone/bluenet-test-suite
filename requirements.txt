@@ -1,3 +1,4 @@
+matplotlib
 colorama
 crownstone-core
 crownstone-uart

@@ -3,7 +3,8 @@ Just a scratch that loads a few cuckoo filters into the firmware in chunks,
 then commits them and requests their status.
 """
 import time
-
+# import logging
+# logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 from crownstone_core.packets.assetFilter.FilterDescriptionPackets import *
 from crownstone_core.packets.assetFilter.FilterIOPackets import *
@@ -18,6 +19,9 @@ from crownstone_core.protocol.BluenetTypes import ControlType
 
 from crownstone_uart import CrownstoneUart, UartEventBus
 from crownstone_uart.topics.SystemTopics import SystemTopics
+from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
+from crownstone_uart.core.uart.UartTypes import UartRxType
+from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
 
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
 
@@ -282,6 +286,13 @@ def failhandler(*args):
     # print("fail handler called", *args)
     pass
 
+def uartmsghandler(msg: UartMessagePacket):
+    if msg.opCode == UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE:
+        print(f"Received NEAREST_CROWNSTONE_TRACKING_UPDATE: {msg.payload}")
+        packet = NearestCrownstoneTrackingUpdate()
+        packet.setPacket(msg.payload)
+        print(packet)
+
 def resulthandler(resultpacket):
     print("resulthandler called")
     print(resultpacket)
@@ -390,6 +401,8 @@ if __name__ == "__main__":
     uartfail = UartEventBus.subscribe(SystemTopics.uartWriteError, failhandler)
     uartsucces = UartEventBus.subscribe(SystemTopics.uartWriteSuccess, successhandler)
     uartresult = UartEventBus.subscribe(SystemTopics.resultPacket, resulthandler)
+    uartmsg = UartEventBus.subscribe(SystemTopics.uartNewMessage, uartmsghandler)
+
 
     uart = CrownstoneUart()
     uart.initialize_usb_sync(port='/dev/ttyACM0')

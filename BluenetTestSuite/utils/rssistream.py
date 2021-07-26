@@ -3,12 +3,12 @@ class RssiDataPoint:
     def __init__(self, stamp, send, recv, chan, rss):
         self.timestamp = stamp
         self.sender = send
-        self.recipient = recv
+        self.receiver = recv
         self.channel = chan
         self.rssi = rss
 
     def __str__(self):
-        return ",".join([str(x) for x in [self.timestamp, self.sender, self.recipient, self.channel, self.rssi]])
+        return ",".join([str(x) for x in [self.timestamp, self.sender, self.receiver, self.channel, self.rssi]])
 
 
 class RssiStream:

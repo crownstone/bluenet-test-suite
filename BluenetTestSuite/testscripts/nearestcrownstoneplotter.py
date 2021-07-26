@@ -68,48 +68,37 @@ class NearestCrownstoneAlgorithmPlotter:
         # title and format
         fig.suptitle(self.getTitle(), fontsize=12)
 
-        for ax in axs_flat:
-            ax.set_title("hi")
-            ax.plot()
-        return
+        # for ax in axs_flat:
+        #     ax.set_title("hi")
+        #     ax.plot()
 
         myFmt = mdates.DateFormatter('%H:%M:%S')
 
-        # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
-        # we have at most six subplots.
-        ax_index = 0
-        axs_dict = dict()
-        for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
-            axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
-            ax_index += 1
-            if ax_index >= len(axs_flat):
-                break
+        past, now = self.getTimeWindow()
 
-        # loop over the available data per crownstone pair
-        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
-            if i_j not in axs_dict:
-                # can't plot if there is no axis for it. (will happen for the 5th crownstone)
-                break
-
-            # label subplot with the pair id.
-            ax = axs_dict[i_j]
+        for stream, ax in zip(self.rssistreams, axs_flat):
             ax.clear()
-            ax.set_title(' -> '.join(sorted(i_j)))
-            ax.set_xlabel("time(s)")
-            ax.set_xlim(time_minimum, now)
-            ax.xaxis.set_major_formatter(myFmt) # formats the x-axis ticks
-            ax.format_xdata = myFmt # formats the on-hover message box
+            ax.set_title(F"Crownstone #{stream.receiver}")
 
-            # reduce number of ticks on x-axis
-            ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+            # x axis
+            ax.set_xlabel("time (H:M:S)")
+            ax.xaxis.set_major_formatter(myFmt)            # formats the x-axis ticks
+            ax.format_xdata = myFmt                        # formats the on-hover message box
+            ax.xaxis.set_major_locator(plt.MaxNLocator(3)) # reduce number of ticks on x-axis
+            ax.set_xlim(past, now)
 
+            # y axis
             ax.set_ylabel("rssi(dB)")
 
-            # loop over all channels on this pair of crownstones and plot each as a separate line.
-            for channel, rssiStream in channelToStreamDict.items():
-                ax.plot(rssiStream.times, rssiStream.rssis,
-                        marker='o', markersize=3,
-                        label="ch: {0}".format(channel))
+            ax.plot()
+
+        return
+        #
+        # # loop over all channels on this pair of crownstones and plot each as a separate line.
+        # for channel, rssiStream in channelToStreamDict.items():
+        #     ax.plot(rssiStream.times, rssiStream.rssis,
+        #             marker='o', markersize=3,
+        #             label="ch: {0}".format(channel))
 
     def processPlottingQueue(self):
         """
@@ -123,16 +112,18 @@ class NearestCrownstoneAlgorithmPlotter:
             plottingQueueObject = self.plottingQueue.get()
             handlePlottingQueueObject(plottingQueueObject.msg, plottingQueueObject.timestamp, self)
 
-    def removeOldEntriesFromStreams(self):
+    def getTimeWindow(self):
         now = datetime.datetime.now()
-        time_minimum = now - self.plotwindow_width
+        return now - self.plotwindow_width, now
+
+    def removeOldEntriesFromStreams(self):
+        past, now = self.getTimeWindow()
 
         for stream in self.rssistreams:
-            stream.removeOldEntries(time_minimum)
+            stream.removeOldEntries(past)
 
     def getTitle(self):
         return "Nearest Crownstone Algorithm Plot"
-
 
 
 @singledispatch

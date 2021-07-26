@@ -87,8 +87,13 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.xaxis.set_major_locator(plt.MaxNLocator(3)) # reduce number of ticks on x-axis
             ax.set_xlim(past, now)
 
+            ax.plot(stream.times, stream.rssis,
+                    marker='o', markersize=3,
+                    label=f"#{stream.receiver}")
+
             # y axis
             ax.set_ylabel("rssi(dB)")
+            ax.set_ylim(-10,-80)
 
             ax.plot()
 
@@ -135,7 +140,7 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     print("NearestCrownstoneTrackingUpdate ", timestamp)
     sender = msg.assetId
     receiver = msg.crownstoneId
-    rssi = msg.rssi
+    rssi = msg.rssi.val # TODO: adjust when new serialization is done
     channel = msg.channel
 
     stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.rssistreams), None)

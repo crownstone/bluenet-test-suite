@@ -28,5 +28,4 @@ class RssiStream:
         self.rssis.append(rssivalue)
 
     def status(self):
-        return "RssiStream (id #{0}) time window {1}-{2}, {3} samples".format(
-            self.crownstoneId, self.times[0], self.times[-1], len(self.rssis))
+        return F"RssiStream ({self.sender} -> {self.receiver}) time window {self.times[0]}-{self.times[-1]}, {len(self.rssis)} samples"

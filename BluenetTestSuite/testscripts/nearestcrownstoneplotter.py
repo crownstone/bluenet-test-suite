@@ -79,7 +79,7 @@ class NearestCrownstoneAlgorithmPlotter:
 
 
 @singledispatch
-def handlePlottingQueueObject(msg, plotter):
+def handlePlottingQueueObject(msg, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
     raise NotImplementedError("Only available for arguments with registered overridde")
 
 @handlePlottingQueueObject.register
@@ -90,12 +90,9 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     rssi = msg.rssi
     channel = msg.channel
 
-    # TODO: equality check probably fails as sender is PacketBaseList(val: [1, 0, 0], cls: <class 'crownstone_core.util.BasePackets.Uint8'>, len: 3)
-    # (this will check on object id rather than content.)
     stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.rssistreams), None)
 
     if stream is None:
-
         print("adding new stream object for pair: ", sender, receiver)
         stream = RssiStream(sender, receiver)
         plotter.rssistreams.append(stream)
@@ -115,6 +112,11 @@ def handleAssetMacRssiReport(msg : AssetMacReport, plotter: NearestCrownstoneAlg
 
 
 class NearestCrownstoneLogger(Thread):
+    """
+    Thread to decouple logging incoming messages by means of a queue.
+
+    See putMessageOnQueue.
+    """
     def __init__(self, outputfilename=None):
         super(NearestCrownstoneLogger, self).__init__()
         self.loggingQueue = Queue()

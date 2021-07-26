@@ -32,6 +32,9 @@ from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 
 
 class PlotterQueueObject:
+    """
+    Used in the plotter queue
+    """
     def __init__(self, msg):
         self.msg = msg
         self.timestamp = datetime.datetime.now()
@@ -44,7 +47,8 @@ class NearestCrownstoneAlgorithmPlotter:
     """
 
     def __init__(self, plottingtimewindow_seconds, refreshRateMs):
-        self.rssistreams = [] # a list of RssiStream objects, sender == asset, receiver == crownstoneid
+        self.nearestCrownstoneRssiStreams = [] # a list of RssiStream objects based on handleNearestCrowntoneUpdate messages.
+        self.assetRssiStreams = [] # a list of RssiStream objects based on incoming AssetMacReport messages.
         self.plottingQueue = Queue()
         self.loggingQueue = Queue()
 
@@ -94,10 +98,15 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_ylabel("rssi(dB)")
             ax.set_ylim(-10, -80)
 
-            for stream in self.rssistreams:
+            for stream in self.nearestCrownstoneRssiStreams:
                 ax.plot(stream.times, stream.rssis,
                         marker='o', markersize=3,
-                        label=f"#{stream.receiver}")
+                        label=f"nearest #{stream.receiver}")
+
+            for stream in self.assetRssiStreams:
+                ax.plot(stream.times, stream.rssis,
+                        marker='x', markersize=3,
+                        label=f"raw #{stream.receiver}")
 
             ax.legend()
             # ax.plot()
@@ -111,7 +120,6 @@ class NearestCrownstoneAlgorithmPlotter:
 
         Terminates when the plotting queue is empty
         """
-        print(F" *** Processing Plotting Queue *** ({self.plottingQueue.qsize()})")
         while not self.plottingQueue.empty():
             plottingQueueObject = self.plottingQueue.get()
             handlePlottingQueueObject(plottingQueueObject.msg, plottingQueueObject.timestamp, self)
@@ -123,7 +131,7 @@ class NearestCrownstoneAlgorithmPlotter:
     def removeOldEntriesFromStreams(self):
         past, now = self.getTimeWindow()
 
-        for stream in self.rssistreams:
+        for stream in self.nearestCrownstoneRssiStreams:
             stream.removeOldEntries(past)
 
     def getTitle(self):
@@ -142,25 +150,34 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     rssi = msg.rssi.val # TODO: adjust when new serialization is done
     channel = msg.channel
 
-    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.rssistreams), None)
+    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.nearestCrownstoneRssiStreams), None)
 
     if stream is None:
-        print("adding new stream object for pair: ", sender, receiver)
         stream = RssiStream(sender, receiver)
-        plotter.rssistreams.append(stream)
+        plotter.nearestCrownstoneRssiStreams.append(stream)
 
     stream.addNewEntry(timestamp, rssi)
 
 
 @handlePlottingQueueObject.register
-def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, plotter: NearestCrownstoneAlgorithmPlotter):
+def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
     print("NearestCrownstoneTrackingTimeout")
 
 @handlePlottingQueueObject.register
-def handleAssetMacRssiReport(msg : AssetMacReport, plotter: NearestCrownstoneAlgorithmPlotter):
+def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
     print("AssetMacReport")
+    sender = msg.macAddress.getPacket()
+    receiver = msg.crownstoneId.val
+    rssi = msg.rssi.val  # TODO: adjust when new serialization is done
+    channel = msg.channel
 
+    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.assetRssiStreams), None)
 
+    if stream is None:
+        stream = RssiStream(sender, receiver)
+        plotter.assetRssiStreams.append(stream)
+
+    stream.addNewEntry(timestamp, rssi)
 
 
 class NearestCrownstoneLogger(Thread):
@@ -185,7 +202,6 @@ class NearestCrownstoneLogger(Thread):
         logs the queued items to the trackerfile.
         terminates when the queue is empty.
         """
-        print(F" *** Processing Logging Queue *** ({self.loggingQueue.qsize()})")
         self.open_logging_file()
 
         while not self.loggingQueue.empty():
@@ -213,6 +229,10 @@ class NearestCrownstoneLogger(Thread):
 
         if self.trackerfilename is not None:
             self.trackerfile.close()
+
+
+
+
 
 class Main:
     def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250):
@@ -273,9 +293,12 @@ class Main:
         # plt.ion()
         plt.show()
 
-        while True:
-            self.logger.processLoggingQueue()
-            time.sleep(0.1)
+        try:
+            while True:
+                self.logger.processLoggingQueue()
+                time.sleep(0.1)
+        except Exception as e:
+            print(e)
 
 if __name__ == "__main__":
     with Main(outputfilename=None, plottingtimewindow_seconds=60) as m:

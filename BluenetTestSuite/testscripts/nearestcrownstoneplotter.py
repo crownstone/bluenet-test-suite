@@ -76,34 +76,33 @@ class NearestCrownstoneAlgorithmPlotter:
 
         past, now = self.getTimeWindow()
 
-        for stream, ax in zip(self.rssistreams, axs_flat):
+        for ax in axs_flat:
+            # each ax is a subplot that presents one asset.
+            # TODO: filter streams per asset.
+
             ax.clear()
-            ax.set_title(F"Crownstone #{stream.receiver}")
+            ax.set_title(F"AssetId # todo ")
 
             # x axis
             ax.set_xlabel("time (H:M:S)")
-            ax.xaxis.set_major_formatter(myFmt)            # formats the x-axis ticks
-            ax.format_xdata = myFmt                        # formats the on-hover message box
-            ax.xaxis.set_major_locator(plt.MaxNLocator(3)) # reduce number of ticks on x-axis
+            ax.xaxis.set_major_formatter(myFmt)  # formats the x-axis ticks
+            ax.format_xdata = myFmt  # formats the on-hover message box
+            ax.xaxis.set_major_locator(plt.MaxNLocator(3))  # reduce number of ticks on x-axis
             ax.set_xlim(past, now)
-
-            ax.plot(stream.times, stream.rssis,
-                    marker='o', markersize=3,
-                    label=f"#{stream.receiver}")
 
             # y axis
             ax.set_ylabel("rssi(dB)")
-            ax.set_ylim(-10,-80)
+            ax.set_ylim(-10, -80)
 
-            ax.plot()
+            for stream in self.rssistreams:
+                ax.plot(stream.times, stream.rssis,
+                        marker='o', markersize=3,
+                        label=f"#{stream.receiver}")
+
+            ax.legend()
+            # ax.plot()
 
         return
-        #
-        # # loop over all channels on this pair of crownstones and plot each as a separate line.
-        # for channel, rssiStream in channelToStreamDict.items():
-        #     ax.plot(rssiStream.times, rssiStream.rssis,
-        #             marker='o', markersize=3,
-        #             label="ch: {0}".format(channel))
 
     def processPlottingQueue(self):
         """

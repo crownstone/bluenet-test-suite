@@ -54,6 +54,63 @@ class NearestCrownstoneAlgorithmPlotter:
     def putMessageOnQueue(self, msg):
         self.plottingQueue.put(PlotterQueueObject(msg))
 
+    def updatePlotData(self, i, fig, axs_flat):
+        """
+        Processes queue for plotting.
+        Remove old messages.
+        Plot.
+        """
+        self.processPlottingQueue()
+        self.removeOldEntriesFromStreams()
+        self.plot(i, fig, axs_flat)
+
+    def plot(self, i, fig, axs_flat):
+        # title and format
+        fig.suptitle(self.getTitle(), fontsize=12)
+
+        for ax in axs_flat:
+            ax.set_title("hi")
+            ax.plot()
+        return
+
+        myFmt = mdates.DateFormatter('%H:%M:%S')
+
+        # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
+        # we have at most six subplots.
+        ax_index = 0
+        axs_dict = dict()
+        for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
+            axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
+            ax_index += 1
+            if ax_index >= len(axs_flat):
+                break
+
+        # loop over the available data per crownstone pair
+        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
+            if i_j not in axs_dict:
+                # can't plot if there is no axis for it. (will happen for the 5th crownstone)
+                break
+
+            # label subplot with the pair id.
+            ax = axs_dict[i_j]
+            ax.clear()
+            ax.set_title(' -> '.join(sorted(i_j)))
+            ax.set_xlabel("time(s)")
+            ax.set_xlim(time_minimum, now)
+            ax.xaxis.set_major_formatter(myFmt) # formats the x-axis ticks
+            ax.format_xdata = myFmt # formats the on-hover message box
+
+            # reduce number of ticks on x-axis
+            ax.xaxis.set_major_locator(plt.MaxNLocator(3))
+
+            ax.set_ylabel("rssi(dB)")
+
+            # loop over all channels on this pair of crownstones and plot each as a separate line.
+            for channel, rssiStream in channelToStreamDict.items():
+                ax.plot(rssiStream.times, rssiStream.rssis,
+                        marker='o', markersize=3,
+                        label="ch: {0}".format(channel))
+
     def processPlottingQueue(self):
         """
         Updates the rssi stream according to the new events.
@@ -203,63 +260,6 @@ class Main:
             self.logger.putMessageOnQueue(packet)
             self.plotter.putMessageOnQueue(packet)
 
-    ### Plotting
-
-    def updatePlotData(self, i, fig, axs_flat):
-        """
-        Processes queue for plotting.
-        Prepares data for the plot.
-        Plot.
-        """
-        self.plotter.processPlottingQueue()
-        self.plotter.removeOldEntriesFromStreams()
-
-        # title and format
-        fig.suptitle(self.plotter.getTitle(), fontsize=12)
-
-        for ax in axs_flat:
-            ax.set_title("hi")
-            ax.plot()
-        return
-
-        myFmt = mdates.DateFormatter('%H:%M:%S')
-
-        # build a mapping from the lowest crownstone ids pair to an ax of the figure, so that
-        # we have at most six subplots.
-        ax_index = 0
-        axs_dict = dict()
-        for ij_pair in combinations(sorted(self.rssiDataTracker.activeCrownstoneIds)[0:4], 2):
-            axs_dict[frozenset(ij_pair)] = axs_flat[ax_index]
-            ax_index += 1
-            if ax_index >= len(axs_flat):
-                break
-
-        # loop over the available data per crownstone pair
-        for i_j, channelToStreamDict in self.stonePairToChannelStreamsDict.items():
-            if i_j not in axs_dict:
-                # can't plot if there is no axis for it. (will happen for the 5th crownstone)
-                break
-
-            # label subplot with the pair id.
-            ax = axs_dict[i_j]
-            ax.clear()
-            ax.set_title(' -> '.join(sorted(i_j)))
-            ax.set_xlabel("time(s)")
-            ax.set_xlim(time_minimum, now)
-            ax.xaxis.set_major_formatter(myFmt) # formats the x-axis ticks
-            ax.format_xdata = myFmt # formats the on-hover message box
-
-            # reduce number of ticks on x-axis
-            ax.xaxis.set_major_locator(plt.MaxNLocator(3))
-
-            ax.set_ylabel("rssi(dB)")
-
-            # loop over all channels on this pair of crownstones and plot each as a separate line.
-            for channel, rssiStream in channelToStreamDict.items():
-                ax.plot(rssiStream.times, rssiStream.rssis,
-                        marker='o', markersize=3,
-                        label="ch: {0}".format(channel))
-
 
     def run(self):
         """
@@ -273,7 +273,7 @@ class Main:
         # axs_flat = list(chain.from_iterable(axs))
 
         ani = animation.FuncAnimation(fig,
-                                      lambda i: self.updatePlotData(i, fig, axs_flat),
+                                      lambda i: self.plotter.updatePlotData(i, fig, axs_flat),
                                       interval=self.plotter.refreshRateMs)
         # plt.ion()
         plt.show()

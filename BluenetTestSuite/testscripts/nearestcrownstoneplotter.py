@@ -16,10 +16,6 @@ import matplotlib.animation as animation
 import matplotlib
 matplotlib.use('TkAgg')
 
-from BluenetTestSuite.utils.setup import *
-from BluenetTestSuite.utils.rssistream import *
-
-
 from crownstone_uart import UartEventBus
 from crownstone_uart.topics.SystemTopics import SystemTopics
 
@@ -29,6 +25,13 @@ from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessageP
 from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
 from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingTimeout
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
+
+from BluenetTestSuite.utils.setup import *
+from BluenetTestSuite.utils.rssistream import *
+
+from BluenetTestSuite.utils.exactmacfilter import *
+from BluenetTestSuite.utils.filtercommands import *
+
 
 
 class PlotterQueueObject:
@@ -101,12 +104,12 @@ class NearestCrownstoneAlgorithmPlotter:
             for stream in self.nearestCrownstoneRssiStreams:
                 ax.plot(stream.times, stream.rssis,
                         marker='o', markersize=3,
-                        label=f"nearest #{stream.receiver}")
+                        label=f"nearest #{stream.receiver}", color='red')
 
             for stream in self.assetRssiStreams:
                 ax.plot(stream.times, stream.rssis,
                         marker='x', markersize=3,
-                        label=f"raw #{stream.receiver}")
+                        label=f"raw #{stream.receiver}", color='blue')
 
             ax.legend()
             # ax.plot()
@@ -233,9 +236,26 @@ class NearestCrownstoneLogger(Thread):
 
 
 
+class FilterManager:
+    def __init__(self, macaddresslist):
+        self.macadresses = macaddresslist
+        self.trackingfilters = []
+        self.trackingfilters.append(filterExactMacInMacOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInShortIdOut(self.macadresses))
+
+    def loadfilters(self):
+        masterCrc = removeAllFilters()
+        masterCrc = uploadFilters(self.trackingfilters)
+        finalizeFilterUpload(masterCrc)
+        getStatus()
+
+
 
 class Main:
-    def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250):
+    def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250, macaddresslist=[]):
+        """
+        Setup filters Logger and plotter to visualise various nearest crownstone algorithm statistics.
+        """
         # initialize uart
         self.crownstoneUart = setupCrownstoneUart()
         self.crownstoneLogs = setupCrownstoneLogs()
@@ -245,9 +265,12 @@ class Main:
         # general plotting parameters
         self.logger = NearestCrownstoneLogger(outputfilename)
         self.plotter = NearestCrownstoneAlgorithmPlotter(plottingtimewindow_seconds, refreshRateMs)
+        self.filtermanager = FilterManager(macaddresslist)
 
     def __enter__(self):
         self.logger.start()
+        self.filtermanager.loadfilters()
+
         return self
 
     def __exit__(self, type, value, traceback):
@@ -301,6 +324,6 @@ class Main:
             print(e)
 
 if __name__ == "__main__":
-    with Main(outputfilename=None, plottingtimewindow_seconds=60) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=60, macaddresslist = ['60:c0:bf:28:0d:ae']) as m:
         m.run()
 

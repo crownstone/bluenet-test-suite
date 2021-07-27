@@ -56,9 +56,9 @@ class NearestStream:
             # nothing to trim, that's ok.
             pass
 
-    def addNewEntry(self, timestamp, rssivalue, receiver):
+    def addNewEntry(self, timestamp, rssivalue, receiver, blockPlot = False):
         # block plot: duplicate previous data if any.
-        if len(self.times) > 0:
+        if len(self.times) > 0 and blockPlot:
             self.times.append(timestamp)
             self.rssis.append(self.rssis[-1])
             self.receivers.append(self.receivers[-1])

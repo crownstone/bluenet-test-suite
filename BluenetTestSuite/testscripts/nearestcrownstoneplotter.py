@@ -51,6 +51,7 @@ class NearestCrownstoneAlgorithmPlotter:
 
     def __init__(self, plottingtimewindow_seconds, refreshRateMs):
         self.nearestCrownstoneRssiStreams = [] # a list of RssiStream objects based on handleNearestCrowntoneUpdate messages.
+        # self.assetRssiStreamsMax = [] # a list of NearestStream objects that administrates the current maximum per asset based on AssetMacReport messages.
         self.assetRssiStreams = []             # a list of NearestStream objects based on incoming AssetMacReport messages.
         self.plottingQueue = Queue()
         self.loggingQueue = Queue()
@@ -97,23 +98,27 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_ylabel("rssi(dB)")
             ax.set_ylim(-80, -10)
 
-            for stream in self.assetRssiStreams:
-                ax.plot(stream.times, stream.rssis, marker='o', markersize=2, label=f"raw #{stream.receiver}",linestyle=':')
 
+            ### plot vertical lines for nearest
             for stream in self.nearestCrownstoneRssiStreams:
                 for i in range(len(stream.times)):
                     if i == 0 or stream.receivers[i] != stream.receivers[i-1]:
-                        ax.vlines(stream.times[i], -80, -10, color='black', linestyles='--')
-                        ax.text(stream.times[i], -80, f"#{stream.receivers[i]}", size=10, color='black') # (stream.times[i]-past)/(now-past)
+                        ax.vlines(stream.times[i], -80, -10, color='gray', linestyles='--')
+                        ax.text(stream.times[i], -80, f"#{stream.receivers[i]}", size=10, color='gray') # (stream.times[i]-past)/(now-past)
 
-
+                # plot markers for nearest
                 ax.plot(stream.times, stream.rssis,
-                        marker='x', markersize=3,
-                        label=f"nearest # crownstonereceiver", color='red',linestyle='--')
+                        marker='o', markersize=8,
+                        label=f"nearest", color='red', fillstyle='none', linestyle='none')
 
+            for stream in self.assetRssiStreams:
+                ax.plot(stream.times, stream.rssis, marker='o', markersize=2, label=f"cs #{stream.receiver}",linestyle='-')
+
+            # ### plot maximum:
+            # for stream in self.assetRssiStreamsMax:
+            #     ax.plot(stream.times, stream.rssis, marker='o', markersize=2, label=f"max rssi",linestyle='-', color='black')
 
             ax.legend()
-            # ax.plot()
 
         return
 
@@ -157,7 +162,7 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     channel = msg.channel
     print("NearestCrownstoneTrackingUpdate ", timestamp,receiver, rssi)
 
-          # find the nearest stream for this sender (asset)
+    # find the nearest stream for this sender (asset)
     stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
 
     if stream is None:
@@ -178,14 +183,41 @@ def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime,
     rssi = msg.rssi.val  # TODO: adjust when new serialization is done
     channel = msg.channel
 
-    # find the nearest stream for this sender->receiver (i.e. asset->crownstone)
+    ### update the asset rssi stream for this (asset,crownstone) pair
+    # find the nearest stream for this sender->receiver
     stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.assetRssiStreams), None)
 
+    # create one if necessary
     if stream is None:
         stream = RssiStream(sender, receiver)
         plotter.assetRssiStreams.append(stream)
 
     stream.addNewEntry(timestamp, rssi)
+
+    # ### add maximum value to the assetRssiStreamsMax list.
+    # # find the max stream for this sender (asset)
+    # max_stream = next(filter(lambda s: s.sender == sender, plotter.assetRssiStreamsMax), None)
+    #
+    # # create one if necessary
+    # if max_stream is None:
+    #     max_stream = NearestStream(sender)
+    #     plotter.assetRssiStreamsMax.append(max_stream)
+    #
+    # # find current maximum:
+    # rssi_max = -100
+    # receiver_max = None
+    # for rssi_stream in [assetstream for assetstream in plotter.assetRssiStreams if assetstream.sender == sender]:
+    #     # if the message is from the current asset and the timestamp is equal to the one currently handled
+    #     if rssi_stream.times[-1] == timestamp:
+    #         rssi_max = max(rssi_max, rssi_stream.rssis[-1])
+    #         receiver_max = rssi_stream.receiver
+    #
+    # if rssi_max is not None and receiver_max is not None:
+    #     max_stream.addNewEntry(timestamp, rssi_max, receiver_max)
+    # else:
+    #     print("max stream failed to update. What happened?")
+
+
 
 
 class NearestCrownstoneLogger(Thread):

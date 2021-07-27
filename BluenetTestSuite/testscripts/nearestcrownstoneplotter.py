@@ -98,10 +98,10 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_ylim(-80, -10)
 
             for stream in self.nearestCrownstoneRssiStreams:
-                ax.vlines(stream.times,-80,-10, color='black',linestyles='--')
-
                 for i in range(len(stream.times)):
-                    ax.text(stream.times[i], -80, f"#{stream.receivers[i]}", size=10, color='black') # (stream.times[i]-past)/(now-past)
+                    if i == 0 or stream.receivers[i] != stream.receivers[i-1]:
+                        ax.vlines(stream.times[i], -80, -10, color='black', linestyles='--')
+                        ax.text(stream.times[i], -80, f"#{stream.receivers[i]}", size=10, color='black') # (stream.times[i]-past)/(now-past)
 
 
                 ax.plot(stream.times, stream.rssis,
@@ -334,6 +334,6 @@ class Main:
             print(e)
 
 if __name__ == "__main__":
-    with Main(outputfilename=None, plottingtimewindow_seconds=60, macaddresslist = ['60:c0:bf:28:0d:ae']) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = ['60:c0:bf:28:0d:ae']) as m:
         m.run()
 

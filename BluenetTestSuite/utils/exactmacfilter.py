@@ -37,7 +37,8 @@ def filterExactMacInShortIdOut(maclist):
 def exactMacFilterData(maclist = [], reverse=True):
     """
     Builds exact match filter data object, checking sizes etc.
-    Items should be mac addresses in human readible format,
+    Items should be mac addresses as strings in human readible format.
+    I.e. hex without leading (0x) separated by colons (:).
     they will be reversed unless specified otherwise.
     """
 
@@ -45,19 +46,26 @@ def exactMacFilterData(maclist = [], reverse=True):
         return None
 
     count = len(maclist)
-    size = len(maclist[0])
-    if count == 0 or any([len(mac) != size for mac in maclist]):
+    if count == 0:
         return None
 
-    filly = ExactMatchFilterData(itemCount=count, itemSize=size)
-
-    filly.itemArray.val = []
+    # transform strings to byte arrays
+    maclist_as_bytes = []
     if not reverse:
         for mac in maclist:
-            filly.itemArray.val += [int(x, 16) for x in mac.split(":")]
+            maclist_as_bytes.append([int(x, 16) for x in mac.split(":")])
     else:
         for mac in maclist:
-            filly.itemArray.val += [int(x, 16) for x in mac.split(":")][::-1]
+            maclist_as_bytes.append([int(x, 16) for x in mac.split(":")][::-1])
+
+    size_as_bytes = len(maclist_as_bytes[0])
+    if any([len(mac_as_bytes) != size_as_bytes for mac_as_bytes in maclist_as_bytes]):
+        return None
+
+    # construct filterdata
+    filly = ExactMatchFilterData(itemCount=count, itemSize=size_as_bytes)
+    filly.itemArray.val = sum(maclist_as_bytes, [])
+
     return filly
 
 

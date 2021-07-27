@@ -244,6 +244,8 @@ class FilterManager:
         self.trackingfilters.append(filterExactMacInShortIdOut(self.macadresses))
 
     def loadfilters(self):
+        # TODO: filter size incorrect, commit removes them?
+        # LOG: [2021-07-26 15:31:15.914476] [sation/cs_AssetFilterStore.cpp: 541] W Deallocating filter ID=1 because filter size does not match: allocated=14 calculated=25
         masterCrc = removeAllFilters()
         masterCrc = uploadFilters(self.trackingfilters)
         finalizeFilterUpload(masterCrc)
@@ -286,7 +288,7 @@ class Main:
         typemap = {
             UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE: NearestCrownstoneTrackingUpdate,
             UartRxType.NEAREST_CROWNSTONE_TRACKING_TIMEOUT: NearestCrownstoneTrackingTimeout,
-            UartRxType.ASSET_MAC_RSSI_REPORT: UartRxType.ASSET_MAC_RSSI_REPORT
+            UartRxType.ASSET_MAC_RSSI_REPORT: AssetMacReport
         }
 
         packettype = typemap.get(msg.opCode, None)

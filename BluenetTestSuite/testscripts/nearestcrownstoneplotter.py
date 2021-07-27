@@ -51,7 +51,7 @@ class NearestCrownstoneAlgorithmPlotter:
 
     def __init__(self, plottingtimewindow_seconds, refreshRateMs):
         self.nearestCrownstoneRssiStreams = [] # a list of RssiStream objects based on handleNearestCrowntoneUpdate messages.
-        self.assetRssiStreams = [] # a list of RssiStream objects based on incoming AssetMacReport messages.
+        self.assetRssiStreams = []             # a list of NearestStream objects based on incoming AssetMacReport messages.
         self.plottingQueue = Queue()
         self.loggingQueue = Queue()
 
@@ -74,10 +74,6 @@ class NearestCrownstoneAlgorithmPlotter:
     def plot(self, i, fig, axs_flat):
         # title and format
         fig.suptitle(self.getTitle(), fontsize=12)
-
-        # for ax in axs_flat:
-        #     ax.set_title("hi")
-        #     ax.plot()
 
         myFmt = mdates.DateFormatter('%H:%M:%S')
 
@@ -102,9 +98,15 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_ylim(-80, -10)
 
             for stream in self.nearestCrownstoneRssiStreams:
+                ax.vlines(stream.times,-80,-10, color='black',linestyles='--')
+
+                for i in range(len(stream.times)):
+                    ax.text(stream.times[i], -80, f"#{stream.receivers[i]}", size=10, color='black') # (stream.times[i]-past)/(now-past)
+
+
                 ax.plot(stream.times, stream.rssis,
                         marker='o', markersize=3,
-                        label=f"nearest #{stream.receiver}", color='red',linestyle='--')
+                        label=f"nearest # crownstonereceiver", color='red',linestyle='--')
 
             for stream in self.assetRssiStreams:
                 ax.plot(stream.times, stream.rssis,
@@ -136,6 +138,8 @@ class NearestCrownstoneAlgorithmPlotter:
 
         for stream in self.nearestCrownstoneRssiStreams:
             stream.removeOldEntries(past)
+        for stream in self.assetRssiStreams:
+            stream.removeOldEntries(past)
 
     def getTitle(self):
         return "Nearest Crownstone Algorithm Plot"
@@ -153,13 +157,14 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     rssi = msg.rssi.val # TODO: adjust when new serialization is done
     channel = msg.channel
 
-    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.nearestCrownstoneRssiStreams), None)
+    # find the nearest stream for this sender (asset)
+    stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
 
     if stream is None:
-        stream = RssiStream(sender, receiver)
+        stream = NearestStream(sender)
         plotter.nearestCrownstoneRssiStreams.append(stream)
 
-    stream.addNewEntry(timestamp, rssi)
+    stream.addNewEntry(timestamp, rssi, receiver)
 
 
 @handlePlottingQueueObject.register
@@ -173,6 +178,7 @@ def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime,
     rssi = msg.rssi.val  # TODO: adjust when new serialization is done
     channel = msg.channel
 
+    # find the nearest stream for this sender->receiver (i.e. asset->crownstone)
     stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.assetRssiStreams), None)
 
     if stream is None:
@@ -236,15 +242,18 @@ class NearestCrownstoneLogger(Thread):
 
 
 class FilterManager:
-    def __init__(self, macaddresslist):
+    def __init__(self, macaddresslist, shouldloadfilters):
         self.macadresses = macaddresslist
         self.trackingfilters = []
         self.trackingfilters.append(filterExactMacInMacOut(self.macadresses))
         self.trackingfilters.append(filterExactMacInShortIdOut(self.macadresses))
 
+        self.shouldloadfilters = shouldloadfilters
+
     def loadfilters(self):
-        # TODO: filter size incorrect, commit removes them?
-        # LOG: [2021-07-26 15:31:15.914476] [sation/cs_AssetFilterStore.cpp: 541] W Deallocating filter ID=1 because filter size does not match: allocated=14 calculated=25
+        if not self.shouldloadfilters:
+            return
+
         masterCrc = removeAllFilters()
         masterCrc = uploadFilters(self.trackingfilters)
         finalizeFilterUpload(masterCrc,version=2)
@@ -253,7 +262,7 @@ class FilterManager:
 
 
 class Main:
-    def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250, macaddresslist=[]):
+    def __init__(self, outputfilename = None, plottingtimewindow_seconds=60, refreshRateMs=250, macaddresslist=[], loadfilters=False):
         """
         Setup filters Logger and plotter to visualise various nearest crownstone algorithm statistics.
         """
@@ -266,7 +275,7 @@ class Main:
         # general plotting parameters
         self.logger = NearestCrownstoneLogger(outputfilename)
         self.plotter = NearestCrownstoneAlgorithmPlotter(plottingtimewindow_seconds, refreshRateMs)
-        self.filtermanager = FilterManager(macaddresslist)
+        self.filtermanager = FilterManager(macaddresslist, loadfilters)
 
     def __enter__(self):
         self.logger.start()

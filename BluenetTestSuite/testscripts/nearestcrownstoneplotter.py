@@ -99,17 +99,17 @@ class NearestCrownstoneAlgorithmPlotter:
 
             # y axis
             ax.set_ylabel("rssi(dB)")
-            ax.set_ylim(-10, -80)
+            ax.set_ylim(-80, -10)
 
             for stream in self.nearestCrownstoneRssiStreams:
                 ax.plot(stream.times, stream.rssis,
                         marker='o', markersize=3,
-                        label=f"nearest #{stream.receiver}", color='red')
+                        label=f"nearest #{stream.receiver}", color='red',linestyle='--')
 
             for stream in self.assetRssiStreams:
                 ax.plot(stream.times, stream.rssis,
                         marker='x', markersize=3,
-                        label=f"raw #{stream.receiver}", color='blue')
+                        label=f"raw #{stream.receiver}", color='blue',linestyle=':')
 
             ax.legend()
             # ax.plot()
@@ -168,7 +168,6 @@ def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, times
 
 @handlePlottingQueueObject.register
 def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
-    print("AssetMacReport")
     sender = msg.macAddress.getPacket()
     receiver = msg.crownstoneId.val
     rssi = msg.rssi.val  # TODO: adjust when new serialization is done
@@ -248,7 +247,7 @@ class FilterManager:
         # LOG: [2021-07-26 15:31:15.914476] [sation/cs_AssetFilterStore.cpp: 541] W Deallocating filter ID=1 because filter size does not match: allocated=14 calculated=25
         masterCrc = removeAllFilters()
         masterCrc = uploadFilters(self.trackingfilters)
-        finalizeFilterUpload(masterCrc)
+        finalizeFilterUpload(masterCrc,version=2)
         getStatus()
 
 

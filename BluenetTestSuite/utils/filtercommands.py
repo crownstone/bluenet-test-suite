@@ -47,9 +47,9 @@ def uploadFilters(trackingfilters):
 
     return masterCrc
 
-def finalizeFilterUpload(masterCrc):
+def finalizeFilterUpload(masterCrc, version=1):
     print("------------- commit upload ---------------");
-    commit(crc=masterCrc, version=1)
+    commit(crc=masterCrc, version=version)
     time.sleep(2)
     print("------------- get summaries ---------------");
     getStatus()

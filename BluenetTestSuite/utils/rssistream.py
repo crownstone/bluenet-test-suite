@@ -19,9 +19,13 @@ class RssiStream:
         self.rssis = []
 
     def removeOldEntries(self, time_minimum):
-        indx = next(idx for idx, t in enumerate(self.times) if t >= time_minimum)
-        self.times = self.times[indx:]
-        self.rssis = self.rssis[indx:]
+        try:
+            indx = next(idx for idx, t in enumerate(self.times) if t >= time_minimum)
+            self.times = self.times[indx:]
+            self.rssis = self.rssis[indx:]
+        except StopIteration:
+            # nothing to trim, that's ok.
+            pass
 
     def addNewEntry(self, timestamp, rssivalue):
         self.times.append(timestamp)

@@ -28,6 +28,11 @@ class RssiStream:
             pass
 
     def addNewEntry(self, timestamp, rssivalue):
+        # block plot: duplicate previous data if any.
+        if len(self.times) > 0:
+            self.times.append(timestamp)
+            self.rssis.append(self.rssis[-1])
+
         self.times.append(timestamp)
         self.rssis.append(rssivalue)
 
@@ -46,11 +51,18 @@ class NearestStream:
             indx = next(idx for idx, t in enumerate(self.times) if t >= time_minimum)
             self.times = self.times[indx:]
             self.rssis = self.rssis[indx:]
+            self.receivers = self.receivers[indx:]
         except StopIteration:
             # nothing to trim, that's ok.
             pass
 
     def addNewEntry(self, timestamp, rssivalue, receiver):
+        # block plot: duplicate previous data if any.
+        if len(self.times) > 0:
+            self.times.append(timestamp)
+            self.rssis.append(self.rssis[-1])
+            self.receivers.append(self.receivers[-1])
+
         self.times.append(timestamp)
         self.rssis.append(rssivalue)
         self.receivers.append(receiver)

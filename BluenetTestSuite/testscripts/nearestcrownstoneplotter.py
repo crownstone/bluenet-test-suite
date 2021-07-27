@@ -97,6 +97,9 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_ylabel("rssi(dB)")
             ax.set_ylim(-80, -10)
 
+            for stream in self.assetRssiStreams:
+                ax.plot(stream.times, stream.rssis, marker='o', markersize=2, label=f"raw #{stream.receiver}",linestyle=':')
+
             for stream in self.nearestCrownstoneRssiStreams:
                 for i in range(len(stream.times)):
                     if i == 0 or stream.receivers[i] != stream.receivers[i-1]:
@@ -105,13 +108,9 @@ class NearestCrownstoneAlgorithmPlotter:
 
 
                 ax.plot(stream.times, stream.rssis,
-                        marker='o', markersize=3,
+                        marker='x', markersize=3,
                         label=f"nearest # crownstonereceiver", color='red',linestyle='--')
 
-            for stream in self.assetRssiStreams:
-                ax.plot(stream.times, stream.rssis,
-                        marker='x', markersize=3,
-                        label=f"raw #{stream.receiver}", color='blue',linestyle=':')
 
             ax.legend()
             # ax.plot()
@@ -151,13 +150,14 @@ def handlePlottingQueueObject(msg, timestamp: datetime.datetime, plotter: Neares
 
 @handlePlottingQueueObject.register
 def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
-    print("NearestCrownstoneTrackingUpdate ", timestamp)
+
     sender = msg.assetId
     receiver = msg.crownstoneId
     rssi = msg.rssi.val # TODO: adjust when new serialization is done
     channel = msg.channel
+    print("NearestCrownstoneTrackingUpdate ", timestamp,receiver, rssi)
 
-    # find the nearest stream for this sender (asset)
+          # find the nearest stream for this sender (asset)
     stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
 
     if stream is None:

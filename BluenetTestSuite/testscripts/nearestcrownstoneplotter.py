@@ -1,10 +1,33 @@
 """
-This is a utility wrapper for the firmware RssiDataTracker class, which pushes its information
-to the FirmwareState tracker.
+This script monitors the conclusions that the NearestCrownstoneAlgorithm makes:
+
+A list of assets is defined.
+Two filters are constructed, which both represent the list of assets.
+The filters are identical, except for the output type, which is MAC resp. SID.
+The filters are commited into the mesh.
+The SIDs are constructed for this list of assets and a map SID -> index in asset list is constructed.
+
+From that point on, the crownstone that is connected via UART will provide the events:
+- 10108: Asset Rssi Data
+- 10109: Nearest Crownstone Update
+- 10110: Nearest Crownstone TimeOut
+
+These incoming events are linked to the original list of assets by their index and they are timestamped.
+At each incoming event, the status can be validated:
+- If a Nearest Crownstone Update is received, does it match with the Nearest Crownstone
+  according to the Asset Rssi Data events?
+  (Possibly allowing accomodation time and rssi margin)
+- If a Nearest Crownstone TimeOut is received, how long ago was the last Asset Rssi Data event?
+
+
+All of this can be displayed in a rolling graph by simply plotting per asset the time series of each crownstones
+rssi values received through the Asset Rssi Data events and annotating the winner transitions and timeouts etc.
+- winner: think line
+- timed out: dotted/dashed
+- other: normal line
+
 """
-from itertools import combinations, chain, combinations_with_replacement
 from functools import singledispatch
-import time
 import datetime
 from queue import Queue
 from sys import stdout

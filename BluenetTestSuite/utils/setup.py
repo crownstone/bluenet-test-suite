@@ -1,5 +1,6 @@
 from bluenet_logs import BluenetLogs
 from crownstone_uart import CrownstoneUart
+import logging
 
 def setupCrownstoneUart():
     """
@@ -17,3 +18,11 @@ def setupCrownstoneLogs():
     bluenetLogs = BluenetLogs()
     bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
     return bluenetLogs
+
+def setupLogLevel(info=None, debug=None, warn=None):
+    if info:
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+    elif debug:
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    elif warn:
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.WARN)

@@ -1,10 +1,10 @@
 import time
 
-from crownstone_core.packets.assetFilter.AssetFilterCommands import *
-from crownstone_core.packets.assetFilter.FilterMetaDataPackets import AssetFilterAndId
+from crownstone_core.packets.assetFilter.FilterCommandPackets import *
+from crownstone_core.packets.assetFilter.util.AssetFilterMasterCrc import get_master_crc_from_filters
 from crownstone_core.protocol.BluenetTypes import ControlType
-from crownstone_core.util import AssetFilterUtil
 from crownstone_core.util.CRC import crc32
+from crownstone_core.packets.assetFilter.util import *
 
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
 
@@ -22,6 +22,8 @@ def removeAllFilters():
 
 def uploadFilters(trackingfilters):
     """
+    trackingFilter: List[AssetFilter]
+
     E.g.
     trackingfilters = []
     trackingfilters.append(filter0())
@@ -33,8 +35,7 @@ def uploadFilters(trackingfilters):
     trackingfilters.append(filterExactExclude())
     """
     # generate filterIds
-    masterCrc = AssetFilterUtil.get_master_crc_from_filters(
-        [AssetFilterAndId(i, f) for i, f in enumerate(trackingfilters)])
+    masterCrc = get_master_crc_from_filters(trackingfilters)
 
     for i, f in enumerate(trackingfilters):
         print(F"------------- upload filter {i} ---------------");
@@ -59,7 +60,7 @@ def finalizeFilterUpload(masterCrc, version=1):
 
 def upload(trackingfilter, filterId, max_chunk_size):
     print(" ** starting upload **")
-    filter_bytes = trackingfilter.getPacket()
+    filter_bytes = trackingfilter.serialize()
     print("filter bytes: ", filter_bytes)
     data_len = len(filter_bytes)
     print("total filter bytes:", data_len, " filter crc: ", hex(crc32(filter_bytes)), " fitlerid: " , filterId)
@@ -67,7 +68,7 @@ def upload(trackingfilter, filterId, max_chunk_size):
         end_index = min(start_index + max_chunk_size, data_len)
         print(" -------- Send packet chunk (EVENT) -------- ", start_index,"-", end_index)
 
-        upload_packet = UploadFilterCommandPacket(
+        upload_packet = UploadFilterChunkPacket(
             filterId=filterId,
             totalSize=data_len,
             chunkSize=end_index-start_index,
@@ -75,16 +76,14 @@ def upload(trackingfilter, filterId, max_chunk_size):
             chunk=filter_bytes[start_index : end_index]
         )
 
-        sendCommandToCrownstone(ControlType.ASSET_FILTER_UPLOAD, upload_packet.getPacket())
+        sendCommandToCrownstone(ControlType.ASSET_FILTER_UPLOAD, upload_packet.serialize())
         time.sleep(0.5)
 
 
 def remove(filterId):
-    removePacket = RemoveFilterCommandPacket(filterId)
-    sendCommandToCrownstone(ControlType.ASSET_FILTER_REMOVE, removePacket.getPacket())
+    removePacket = RemoveFilterPacket(filterId)
+    sendCommandToCrownstone(ControlType.ASSET_FILTER_REMOVE, removePacket.serialize())
 
 def commit(crc, version):
-    commitCommand = CommitFilterChangesCommandPacket()
-    commitCommand.masterCrc = crc
-    commitCommand.masterVersion = version
-    sendCommandToCrownstone(ControlType.ASSET_FILTER_COMMIT_CHANGES, commitCommand.getPacket())
+    commitCommand = CommitFilterChangesPacket(masterCrc=crc, masterVersion=version)
+    sendCommandToCrownstone(ControlType.ASSET_FILTER_COMMIT_CHANGES, commitCommand.serialize())

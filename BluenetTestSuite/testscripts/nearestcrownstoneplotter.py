@@ -91,9 +91,14 @@ class NearestCrownstoneAlgorithmPlotter:
         Remove old messages.
         Plot.
         """
-        self.processPlottingQueue()
-        self.removeOldEntriesFromStreams()
-        self.plot(i, fig, axs_flat)
+        try:
+            self.processPlottingQueue()
+            self.removeOldEntriesFromStreams()
+            self.plot(i, fig, axs_flat)
+        except Exception as e:
+            print(e)
+            raise
+
 
     def plot(self, i, fig, axs_flat):
         # title and format
@@ -143,7 +148,7 @@ class NearestCrownstoneAlgorithmPlotter:
 
             ax.legend()
 
-        return
+
 
     def processPlottingQueue(self):
         """
@@ -178,21 +183,24 @@ def handlePlottingQueueObject(msg, timestamp: datetime.datetime, plotter: Neares
 
 @handlePlottingQueueObject.register
 def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
+    try:
+        sender = msg.assetId
+        receiver = msg.crownstoneId
+        rssi = msg.rssi
+        channel = msg.channel
+        print("NearestCrownstoneTrackingUpdate ", timestamp,receiver, rssi)
 
-    sender = msg.assetId
-    receiver = msg.crownstoneId
-    rssi = msg.rssi.val # TODO: adjust when new serialization is done
-    channel = msg.channel
-    print("NearestCrownstoneTrackingUpdate ", timestamp,receiver, rssi)
+        # find the nearest stream for this sender (asset)
+        stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
 
-    # find the nearest stream for this sender (asset)
-    stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
+        if stream is None:
+            stream = NearestStream(sender)
+            plotter.nearestCrownstoneRssiStreams.append(stream)
 
-    if stream is None:
-        stream = NearestStream(sender)
-        plotter.nearestCrownstoneRssiStreams.append(stream)
-
-    stream.addNewEntry(timestamp, rssi, receiver)
+        stream.addNewEntry(timestamp, rssi, receiver)
+    except Exception as e:
+        print(e)
+        raise
 
 
 @handlePlottingQueueObject.register
@@ -201,21 +209,25 @@ def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, times
 
 @handlePlottingQueueObject.register
 def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
-    sender = msg.macAddress.getPacket()
-    receiver = msg.crownstoneId.val
-    rssi = msg.rssi.val  # TODO: adjust when new serialization is done
-    channel = msg.channel
+    try:
+        sender = msg.assetMacAddress
+        receiver = msg.crownstoneId
+        rssi = msg.rssi
+        channel = msg.channel
 
-    ### update the asset rssi stream for this (asset,crownstone) pair
-    # find the nearest stream for this sender->receiver
-    stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.assetRssiStreams), None)
+        ### update the asset rssi stream for this (asset,crownstone) pair
+        # find the nearest stream for this sender->receiver
+        stream = next(filter(lambda s: s.sender == sender and s.receiver == receiver, plotter.assetRssiStreams), None)
 
-    # create one if necessary
-    if stream is None:
-        stream = RssiStream(sender, receiver)
-        plotter.assetRssiStreams.append(stream)
+        # create one if necessary
+        if stream is None:
+            stream = RssiStream(sender, receiver)
+            plotter.assetRssiStreams.append(stream)
 
-    stream.addNewEntry(timestamp, rssi)
+        stream.addNewEntry(timestamp, rssi)
+    except Exception as e:
+        print(e)
+        raise
 
     # ### add maximum value to the assetRssiStreamsMax list.
     # # find the max stream for this sender (asset)
@@ -310,6 +322,10 @@ class FilterManager:
             return
 
         masterCrc = removeAllFilters()
+
+        for fid, fltr in enumerate(self.trackingfilters):
+            fltr.setFilterId(fid)
+
         masterCrc = uploadFilters(self.trackingfilters)
         finalizeFilterUpload(masterCrc,version=2)
         getStatus()
@@ -348,20 +364,23 @@ class Main:
         """
         Construct object from uart message and put it on the logger/plotter queues.
         """
-        typemap = {
-            UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE: NearestCrownstoneTrackingUpdate,
-            UartRxType.NEAREST_CROWNSTONE_TRACKING_TIMEOUT: NearestCrownstoneTrackingTimeout,
-            UartRxType.ASSET_MAC_RSSI_REPORT: AssetMacReport
-        }
+        try:
+            typemap = {
+                UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE: NearestCrownstoneTrackingUpdate,
+                UartRxType.NEAREST_CROWNSTONE_TRACKING_TIMEOUT: NearestCrownstoneTrackingTimeout,
+                UartRxType.ASSET_MAC_RSSI_REPORT: AssetMacReport
+            }
 
-        packettype = typemap.get(msg.opCode, None)
+            packettype = typemap.get(msg.opCode, None)
 
-        if packettype is not None:
-            print(f"Received {packettype} {str(msg.opCode)}: {msg.payload}")
-            packet = packettype()
-            packet.setPacket(msg.payload)
-            self.logger.putMessageOnQueue(packet)
-            self.plotter.putMessageOnQueue(packet)
+            if packettype is not None:
+                print(f"Received {packettype} {str(msg.opCode)}: {msg.payload}")
+                packet = packettype()
+                packet.deserialize(msg.payload)
+                self.logger.putMessageOnQueue(packet)
+                self.plotter.putMessageOnQueue(packet)
+        except Exception as e:
+            print(e)
 
 
     def run(self):
@@ -389,6 +408,6 @@ class Main:
             print(e)
 
 if __name__ == "__main__":
-    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = ['60:c0:bf:28:0d:ae']) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = ['60:c0:bf:28:0d:ae'], loadfilters=True) as m:
         m.run()
 

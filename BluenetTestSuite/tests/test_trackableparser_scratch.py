@@ -46,7 +46,7 @@ def uartmsghandler(msg: UartMessagePacket):
     if msg.opCode == UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE:
         print(f"Received NEAREST_CROWNSTONE_TRACKING_UPDATE: {msg.payload}")
         packet = NearestCrownstoneTrackingUpdate()
-        packet.setPacket(msg.payload)
+        packet.deserialize(msg.payload)
         print(packet)
 
     if msg.opCode == UartRxType.UART_OPCODE_TX_ASSET_RSSI_MAC_DATA:
@@ -68,7 +68,7 @@ def resulthandler(resultpacket):
             print(resultpacket.payload)
             summary = GetFilterSummariesReturnPacket()
             print(summary)
-            summary.setPacket(resultpacket.payload)
+            summary.deserialize(resultpacket.payload)
             print(summary)
         except ValueError as e:
             print("failed to deserialize result: ", resultpacket)

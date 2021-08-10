@@ -19,7 +19,7 @@ def sendUnencryptedUartMessage(txType, data):
     uart_message = []
     uart_message += Conversion.uint16_to_uint8_array(txType)
     uart_message += data
-    uart_warpper_packet = UartWrapperPacket(UartMessageType.UART_MESSAGE,uart_message).getPacket()
+    uart_warpper_packet = UartWrapperPacket(UartMessageType.UART_MESSAGE,uart_message).serialize()
     UartEventBus.emit(SystemTopics.uartWriteData, uart_warpper_packet)
     sleepAfterUartCommand()
 
@@ -43,4 +43,4 @@ def sendCommandToCrownstone(commandtype, packetcontent):
     """
     controlPacket = ControlPacket(commandtype)
     controlPacket.appendByteArray(packetcontent)
-    sendUnencryptedUartMessage(UartTxType.CONTROL, controlPacket.getPacket())
+    sendUnencryptedUartMessage(UartTxType.CONTROL, controlPacket.serialize())

@@ -283,8 +283,8 @@ class FilterManager:
     def __init__(self, macaddresslist, shouldloadfilters):
         self.macadresses = macaddresslist
         self.trackingfilters = []
-        self.trackingfilters.append(filterExactMacInMacOut(self.macadresses))
-        self.trackingfilters.append(filterExactMacInShortIdOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderShortIdOut(self.macadresses))
 
         self.shouldloadfilters = shouldloadfilters
 
@@ -298,7 +298,7 @@ class FilterManager:
             fltr.setFilterId(fid)
 
         masterCrc = uploadFilters(self.trackingfilters)
-        finalizeFilterUpload(masterCrc,version=2)
+        finalizeFilterUpload(masterCrc,version=10)
         getStatus()
 
 

@@ -6,7 +6,7 @@ from crownstone_core.packets.assetFilter.FilterMetaDataPackets import FilterMeta
 from crownstone_core.packets.assetFilter.builders.AssetIdSourceBuilder import AssetIdSourceBuilder
 
 
-def filterExactMacInMacOut(maclist):
+def filterExactMacInForwarderMacOut(maclist):
     """
     Returns an AssetFilter for exact matching of the given list of mac addresses.
 
@@ -16,14 +16,15 @@ def filterExactMacInMacOut(maclist):
     Items will be reversed.
     """
     af = AssetFilter()
+    af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
     af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
 
-    af.outputMacRssiReport()
+    af.outputForwardRssiReport()
 
     return af
 
-def filterExactMacInShortIdOut(maclist):
+def filterExactMacInNearestShortIdOut(maclist):
     """
     Returns an AssetFilter for exact matching of the given list of mac addresses.
 
@@ -33,21 +34,37 @@ def filterExactMacInShortIdOut(maclist):
     Items will be reversed.
     """
     af = AssetFilter()
+    af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
     af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
-
-    aib = AssetIdSourceBuilder()
-    aib.basedOnMac()
-    af.outputAssetId(basedOn=aib)
+    af.outputAssetIdFromNearest().basedOnMac()
 
     return af
 
 
-def filterBlyott():
+def filterExactMacInForwarderShortIdOut(maclist):
+    """
+    Returns an AssetFilter for exact matching of the given list of mac addresses.
+
+    Filter output description is of type FilterOutputFormat.SHORT_ASSET_ID.
+
+    maclist: a list of strings ['60:c0:bf:28:0d:ae'] in human read mac addres.
+    Items will be reversed.
+    """
     af = AssetFilter()
-    af.metadata = getMetaDataBlyott()
-    af.filterdata.val = exactFilterBlyott()
+    af.setProfileId(0)
+    af.setFilterType(FilterType.EXACT_MATCH)
+    af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
+    af.outputForwardRssiReport(useAssetId=True).basedOnMac()
+
     return af
+
+
+# def filterBlyott():
+#     af = AssetFilter()
+#     af.metadata = getMetaDataBlyott()
+#     af.filterdata.val = exactFilterBlyott()
+#     return af
 
 
 

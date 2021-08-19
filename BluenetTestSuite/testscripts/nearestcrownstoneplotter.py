@@ -327,7 +327,7 @@ class FilterManager:
             fltr.setFilterId(fid)
 
         masterCrc = uploadFilters(self.trackingfilters)
-        finalizeFilterUpload(masterCrc,version=11)
+        finalizeFilterUpload(masterCrc,version=12)
         getStatus()
 
 
@@ -408,6 +408,6 @@ class Main:
             print(e)
 
 if __name__ == "__main__":
-    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = ['60:c0:bf:28:0d:ae'], loadfilters=True) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = getMacList(), loadfilters=True) as m:
         m.run()
 

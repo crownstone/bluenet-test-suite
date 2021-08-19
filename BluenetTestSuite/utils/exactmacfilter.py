@@ -18,7 +18,7 @@ def filterExactMacInForwarderMacOut(maclist):
     af = AssetFilter()
     af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
-    af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
+    af.filterByMacAddress(maclist)
 
     af.outputForwardRssiReport()
 
@@ -36,7 +36,7 @@ def filterExactMacInNearestShortIdOut(maclist):
     af = AssetFilter()
     af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
-    af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
+    af.filterByMacAddress(maclist)
     af.outputAssetIdFromNearest().basedOnMac()
 
     return af
@@ -54,7 +54,7 @@ def filterExactMacInForwarderShortIdOut(maclist):
     af = AssetFilter()
     af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
-    af.filterByMacAddress(['60:c0:bf:28:0d:ae'])
+    af.filterByMacAddress(maclist)
     af.outputForwardRssiReport(useAssetId=True).basedOnMac()
 
     return af

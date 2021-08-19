@@ -379,6 +379,6 @@ class Main:
 
 if __name__ == "__main__":
     setupLogLevel(info=True)
-    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = ['60:c0:bf:28:0d:ae'], loadfilters=True) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist =getMacList(), loadfilters=True) as m:
         m.run()
 

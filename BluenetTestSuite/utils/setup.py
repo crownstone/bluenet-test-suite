@@ -26,3 +26,10 @@ def setupLogLevel(info=None, debug=None, warn=None):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     elif warn:
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.WARN)
+
+
+def getMacList() :
+    return [
+        # '60:c0:bf:28:0d:ae'  # blyott
+        'ac:23:3f:71:cd:36' # minew
+    ]

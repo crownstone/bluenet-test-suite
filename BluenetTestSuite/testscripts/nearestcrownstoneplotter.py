@@ -45,8 +45,7 @@ from crownstone_uart.topics.SystemTopics import SystemTopics
 from crownstone_uart.core.uart.UartTypes import UartRxType
 from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
 
-from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
-from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingTimeout
+from crownstone_uart.core.uart.uartPackets.AssetSidReport import AssetSidReport
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 
 from BluenetTestSuite.utils.setup import *
@@ -119,7 +118,7 @@ class NearestCrownstoneAlgorithmPlotter:
             ax.set_xlabel("time (H:M:S)")
             ax.xaxis.set_major_formatter(myFmt)  # formats the x-axis ticks
             ax.format_xdata = myFmt  # formats the on-hover message box
-            ax.xaxis.set_major_locator(plt.MaxNLocator(3))  # reduce number of ticks on x-axis
+            ax.xaxis.set_major_locator(plt.MaxNLocator(8))  # reduce number of ticks on x-axis
             ax.set_xlim(past, now)
 
             # y axis
@@ -182,13 +181,13 @@ def handlePlottingQueueObject(msg, timestamp: datetime.datetime, plotter: Neares
     raise NotImplementedError("Only available for arguments with registered overridde")
 
 @handlePlottingQueueObject.register
-def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
+def handleNearestCrowntoneUpdate(msg : AssetSidReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
+    print("received AssetSidReport")
     try:
-        sender = msg.assetId
+        sender = msg.shortAssetId
         receiver = msg.crownstoneId
         rssi = msg.rssi
         channel = msg.channel
-        print("NearestCrownstoneTrackingUpdate ", timestamp,receiver, rssi)
 
         # find the nearest stream for this sender (asset)
         stream = next(filter(lambda s: s.sender == sender, plotter.nearestCrownstoneRssiStreams), None)
@@ -201,11 +200,6 @@ def handleNearestCrowntoneUpdate(msg : NearestCrownstoneTrackingUpdate, timestam
     except Exception as e:
         print(e)
         raise e
-
-
-@handlePlottingQueueObject.register
-def handleNearestCrownstoneTimeOut(msg : NearestCrownstoneTrackingTimeout, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
-    print("NearestCrownstoneTrackingTimeout")
 
 @handlePlottingQueueObject.register
 def handleAssetMacRssiReport(msg : AssetMacReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
@@ -327,7 +321,7 @@ class FilterManager:
             fltr.setFilterId(fid)
 
         masterCrc = uploadFilters(self.trackingfilters)
-        finalizeFilterUpload(masterCrc,version=12)
+        finalizeFilterUpload(masterCrc,version=14)
         getStatus()
 
 
@@ -366,15 +360,14 @@ class Main:
         """
         try:
             typemap = {
-                UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE: NearestCrownstoneTrackingUpdate,
-                UartRxType.NEAREST_CROWNSTONE_TRACKING_TIMEOUT: NearestCrownstoneTrackingTimeout,
+                UartRxType.ASSET_SID_RSSI_REPORT : AssetSidReport,
                 UartRxType.ASSET_MAC_RSSI_REPORT: AssetMacReport
             }
 
             packettype = typemap.get(msg.opCode, None)
 
             if packettype is not None:
-                print(f"Received {packettype} {str(msg.opCode)}: {msg.payload}")
+                # print(f"Received {packettype} {str(msg.opCode)}: {msg.payload}")
                 packet = packettype()
                 packet.deserialize(msg.payload)
                 self.logger.putMessageOnQueue(packet)

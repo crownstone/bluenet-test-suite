@@ -6,24 +6,20 @@ import time
 # import logging
 # logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-from crownstone_core.packets.assetFilter.AssetFilterCommands import *
-
-from crownstone_core.util import AssetFilterUtil
+from crownstone_core.packets.assetFilter.FilterCommandPackets import *
 from crownstone_core.util.CRC import crc32
 
 from crownstone_core.protocol.BluenetTypes import ControlType
 
 from crownstone_uart import CrownstoneUart, UartEventBus
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import *
-from crownstone_uart.core.uart.uartPackets.AssetSidReport import *
+from crownstone_uart.core.uart.uartPackets.AssetIdReport import *
 from crownstone_uart.topics.SystemTopics import SystemTopics
 from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
 from crownstone_uart.core.uart.UartTypes import UartRxType
-from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
 
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
-from BluenetTestSuite.utils.exactmacfilter import *
-from BluenetTestSuite.utils.cuckoofilter import *
+from BluenetTestSuite.utils.filterexamples import *
 from BluenetTestSuite.utils.filtercommands import *
 
 from bluenet_logs import BluenetLogs
@@ -43,12 +39,6 @@ def failhandler(*args):
     pass
 
 def uartmsghandler(msg: UartMessagePacket):
-    if msg.opCode == UartRxType.NEAREST_CROWNSTONE_TRACKING_UPDATE:
-        print(f"Received NEAREST_CROWNSTONE_TRACKING_UPDATE: {msg.payload}")
-        packet = NearestCrownstoneTrackingUpdate()
-        packet.deserialize(msg.payload)
-        print(packet)
-
     if msg.opCode == UartRxType.UART_OPCODE_TX_ASSET_RSSI_MAC_DATA:
         print(f"Received UART_OPCODE_TX_ASSET_RSSI_MAC_DATA: {msg.payload}")
         report : AssetMacReport = msg.payload
@@ -56,7 +46,7 @@ def uartmsghandler(msg: UartMessagePacket):
 
     if msg.opCode == UartRxType.UART_OPCODE_TX_ASSET_RSSI_SID_DATA:
         print(f"Received UART_OPCODE_TX_ASSET_RSSI_SID_DATA: {msg.payload}")
-        report : AssetSidReport = msg.payload
+        report : AssetIdReport = msg.payload
         print(report)
 
 def resulthandler(resultpacket):

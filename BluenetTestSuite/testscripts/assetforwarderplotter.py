@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.animation as animation
 import matplotlib
-from crownstone_uart.core.uart.uartPackets.AssetSidReport import AssetSidReport
+
 
 matplotlib.use('TkAgg')
 
@@ -48,14 +48,12 @@ from crownstone_uart.topics.SystemTopics import SystemTopics
 from crownstone_uart.core.uart.UartTypes import UartRxType
 from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
 
-from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingUpdate
-from crownstone_uart.core.uart.uartPackets.NearestCrownstones import NearestCrownstoneTrackingTimeout
+from crownstone_uart.core.uart.uartPackets.AssetIdReport import AssetIdReport
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 
 from BluenetTestSuite.utils.setup import *
 from BluenetTestSuite.utils.rssistream import *
-
-from BluenetTestSuite.utils.exactmacfilter import *
+from BluenetTestSuite.utils.filterexamples import *
 from BluenetTestSuite.utils.filtercommands import *
 
 

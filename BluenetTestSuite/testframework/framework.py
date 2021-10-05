@@ -2,6 +2,7 @@
 import uuid
 from colorama import Fore, Back, Style
 import logging
+import os, sys
 
 from bluenet_logs import BluenetLogs
 from crownstone_uart import CrownstoneUart
@@ -73,5 +74,8 @@ class TestFramework:
         t1 = time.time()
         result = self.test_impl(self.firmwarestate)
         t2 = time.time()
-        print("Framework test_run time: ", t2-t1)
+        print("========================================================================")
+        print("Main python file: ", os.path.basename(sys.argv[0]))
+        print("Framework test_run time: {0:.3f}".format(t2-t1))
+        print("========================================================================")
         return result

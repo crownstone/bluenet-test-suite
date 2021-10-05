@@ -45,7 +45,7 @@ from crownstone_uart.topics.SystemTopics import SystemTopics
 from crownstone_uart.core.uart.UartTypes import UartRxType
 from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessagePacket
 
-from crownstone_uart.core.uart.uartPackets.AssetSidReport import AssetSidReport
+from crownstone_uart.core.uart.uartPackets.AssetIdReport import AssetIdReport
 from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 
 from BluenetTestSuite.utils.setup import *
@@ -181,10 +181,9 @@ def handlePlottingQueueObject(msg, timestamp: datetime.datetime, plotter: Neares
     raise NotImplementedError("Only available for arguments with registered overridde")
 
 @handlePlottingQueueObject.register
-def handleNearestCrowntoneUpdate(msg : AssetSidReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
-    print("received AssetSidReport")
+def handleNearestCrowntoneUpdate(msg : AssetIdReport, timestamp: datetime.datetime, plotter: NearestCrownstoneAlgorithmPlotter):
     try:
-        sender = msg.shortAssetId
+        sender = msg.assetId
         receiver = msg.crownstoneId
         rssi = msg.rssi
         channel = msg.channel
@@ -275,7 +274,7 @@ class NearestCrownstoneLogger(Thread):
 
         while not self.loggingQueue.empty():
             evt = self.loggingQueue.get()
-            print(evt, file=self.trackerfile)
+            print("processed evt: ", evt, file=self.trackerfile)
 
         self.close_logging_file()
 
@@ -306,8 +305,13 @@ class FilterManager:
     def __init__(self, macaddresslist, shouldloadfilters):
         self.macadresses = macaddresslist
         self.trackingfilters = []
-        self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
-        self.trackingfilters.append(filterExactMacInNearestShortIdOut(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInNearestShortIdOut(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInNearestShortIdOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
+
 
         self.shouldloadfilters = shouldloadfilters
 
@@ -321,7 +325,7 @@ class FilterManager:
             fltr.setFilterId(fid)
 
         masterCrc = uploadFilters(self.trackingfilters)
-        finalizeFilterUpload(masterCrc,version=14)
+        finalizeFilterUpload(masterCrc,version=18)
         getStatus()
 
 
@@ -360,7 +364,7 @@ class Main:
         """
         try:
             typemap = {
-                UartRxType.ASSET_SID_RSSI_REPORT : AssetSidReport,
+                UartRxType.ASSET_ID_RSSI_REPORT : AssetIdReport,
                 UartRxType.ASSET_MAC_RSSI_REPORT: AssetMacReport
             }
 

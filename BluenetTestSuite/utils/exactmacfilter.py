@@ -1,4 +1,4 @@
-from crownstone_core.packets.assetFilter.builders.AssetFilter import AssetFilter
+from crownstone_core.packets.assetFilter.builders.AssetFilter import AssetFilter, OptimizeOutputStrategy
 from crownstone_core.packets.assetFilter.FilterMetaDataPackets import FilterMetaData, FilterType
 
 
@@ -20,7 +20,7 @@ def filterExactMacInForwarderMacOut(maclist):
     af.setFilterType(FilterType.EXACT_MATCH)
     af.filterByMacAddress(maclist)
 
-    af.outputForwardRssiReport()
+    af.outputMacRssiReport()
 
     return af
 
@@ -37,7 +37,25 @@ def filterExactMacInNearestShortIdOut(maclist):
     af.setProfileId(0)
     af.setFilterType(FilterType.EXACT_MATCH)
     af.filterByMacAddress(maclist)
-    af.outputAssetIdFromNearest().basedOnMac()
+    af.outputAssetId(optimizeStrategy=OptimizeOutputStrategy.NEAREST).basedOnMac() # is this configured correctly now?
+
+    return af
+
+def filterExactMacInForwarderOutputNone(maclist):
+    """
+    Returns an AssetFilter for exact matching of the given list of mac addresses.
+
+    Filter output description is of type FilterOutputFormat.NONE.
+
+    maclist: a list of strings ['60:c0:bf:28:0d:ae'] in human read mac addres.
+    Items will be reversed.
+    """
+    af = AssetFilter()
+    af.setProfileId(0)
+    af.setFilterType(FilterType.EXACT_MATCH)
+    af.filterByMacAddress(maclist)
+
+    af.outputNone()
 
     return af
 

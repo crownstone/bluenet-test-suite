@@ -51,7 +51,7 @@ from crownstone_uart.core.uart.uartPackets.AssetMacReport import AssetMacReport
 from BluenetTestSuite.utils.setup import *
 from BluenetTestSuite.utils.rssistream import *
 
-from BluenetTestSuite.utils.exactmacfilter import *
+from BluenetTestSuite.utils.filterexamples import *
 from BluenetTestSuite.utils.filtercommands import *
 
 

@@ -21,7 +21,7 @@ def buildTwilight(from_hours, to_hours, intensity):
 
 
 def sendBehaviour(index, behaviour):
-    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.getPacket())
+    sendCommandToCrownstone(ControlType.REPLACE_BEHAVIOUR, [index] + behaviour.serialize())
     sleepAfterUartCommand()
 
 def sendClearBehaviourStoreEvent():

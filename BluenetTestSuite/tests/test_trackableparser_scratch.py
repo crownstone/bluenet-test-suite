@@ -19,7 +19,6 @@ from crownstone_uart.core.uart.uartPackets.UartMessagePacket import UartMessageP
 from crownstone_uart.core.uart.UartTypes import UartRxType
 
 from BluenetTestSuite.firmwarecontrol.datatransport import sendCommandToCrownstone
-from BluenetTestSuite.utils.exactmacfilter import *
 from BluenetTestSuite.utils.filterexamples import *
 from BluenetTestSuite.utils.filtercommands import *
 

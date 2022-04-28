@@ -31,8 +31,8 @@ def buildDumbScenario(FW):
     scenario.addEvent(bind(sendCommandDumbMode,True))
 
     scenario.wait(1)
-    scenario.addExpect("BehaviourHandler", "isActive", "False" ,"behaviour handler should be inactive when dumb")
-    scenario.addExpect("TwilightHandler", "isActive", "False", "twilight handler should be inactive when dumb")
+    scenario.addExpect("BehaviourHandler", "_isActive", "False" ,"behaviour handler should be inactive when dumb")
+    scenario.addExpect("TwilightHandler", "_isActive", "False", "twilight handler should be inactive when dumb")
 
     # loops through all hours to check if everything is as dumb at all times.
     for hour in range (0,24,3):
@@ -82,8 +82,8 @@ def buildSmartScenario(FW):
     scenario.addEvent(bind(sendCommandDumbMode, False))
 
     scenario.wait(1)
-    scenario.addExpect("BehaviourHandler", "isActive", "True", "behaviour handler should be active when smart")
-    scenario.addExpect("TwilightHandler", "isActive", "True", "twilight handler should be active when smart")
+    scenario.addExpect("BehaviourHandler", "_isActive", "True", "behaviour handler should be active when smart")
+    scenario.addExpect("TwilightHandler", "_isActive", "True", "twilight handler should be active when smart")
 
     # nothing is active yet
     scenario.setTime(8, 0)

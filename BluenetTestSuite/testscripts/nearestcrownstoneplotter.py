@@ -305,12 +305,12 @@ class FilterManager:
     def __init__(self, macaddresslist, shouldloadfilters):
         self.macadresses = macaddresslist
         self.trackingfilters = []
-        # self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
-        # self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
+        self.trackingfilters.append(filterExactMacInForwarderMacOut(self.macadresses))
         # self.trackingfilters.append(filterExactMacInNearestShortIdOut(self.macadresses))
         # self.trackingfilters.append(filterExactMacInNearestShortIdOut(self.macadresses))
-        self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
-        self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
+        # self.trackingfilters.append(filterExactMacInForwarderOutputNone(self.macadresses))
 
 
         self.shouldloadfilters = shouldloadfilters
@@ -405,6 +405,6 @@ class Main:
             print(e)
 
 if __name__ == "__main__":
-    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = getMacList(), loadfilters=True) as m:
+    with Main(outputfilename=None, plottingtimewindow_seconds=3*60, macaddresslist = getMacList(), loadfilters=False) as m:
         m.run()
 

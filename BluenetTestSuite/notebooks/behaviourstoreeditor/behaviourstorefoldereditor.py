@@ -8,7 +8,7 @@ from behaviourstoreeditor.behaviourstorefileeditor import *
 
 import os, json
 
-
+from BluenetTestSuite.notebooks.behaviourstoreeditor.behaviourstorefileeditor import BehaviourStoreFileEditor
 
 
 class BehaviourStoreFolderEditor:

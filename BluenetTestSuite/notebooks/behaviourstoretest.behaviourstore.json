@@ -1,0 +1,22 @@
+{
+    "entries": [
+        {
+            "guid": "11501b9e7a3f414faad51d9fe574bdef",
+            "index": 0,
+            "fromfield": 12600,
+            "untilfield": 64800,
+            "intensityfield": 26,
+            "fromuntil_reversed_field": false,
+            "typefield": "twilight"
+        },
+        {
+            "guid": "2f02535ba0214dfb88d45e3c9bd4b9b1",
+            "index": 1,
+            "fromfield": 32400,
+            "untilfield": 68400,
+            "intensityfield": 80,
+            "fromuntil_reversed_field": false,
+            "typefield": "behaviour"
+        }
+    ]
+}

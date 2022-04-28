@@ -109,7 +109,7 @@ def test_twilightconflictresolution_loopbody(FW, testcase):
         # immediately recompute state upon a setTime event.
         time.sleep(2)
 
-        result = expect(FW, "TwilightHandler", "currentIntendedState", testcase.e[i],
+        result = expect(FW, "TwilightHandler", "_currentIntendedState", testcase.e[i],
                       "({0},{1}). At time: {2}:{3}".format(i, str(testcase), (testtime // 3600) % 24,
                                                                    (testtime % 3600) // 60))
         if result:

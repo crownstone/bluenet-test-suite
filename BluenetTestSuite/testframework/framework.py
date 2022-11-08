@@ -30,7 +30,8 @@ class TestFramework:
 
         # Create the uart connection
         self.bluenetLogs = BluenetLogs()
-        self.bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
+        # self.bluenetLogs.setSourceFilesDir("/home/arend/Documents/crownstone-bluenet/bluenet/source")
+        self.bluenetLogs.setLogStringsFile("/home/arend/Documents/crownstone/crownstone-bluenet/bluenet/build/dev3306/extracted_logs.json")
         self.uart = CrownstoneUart()
         self.firmwarestate = FirmwareState()
 

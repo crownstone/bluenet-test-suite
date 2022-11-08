@@ -24,7 +24,7 @@ from BluenetTestSuite.testframework.events import expect
 def test_bootloadsflashintooverride_loopbody(FW, intensity):
     print("##### setup test_bootloadsflashintooverride_loopbody (intensity: {0}) #####".format(intensity))
     sendCommandToCrownstone(ControlType.RESET, [])
-    time.sleep(60)  # wait for dimmer to power up...
+    time.sleep(70)  # wait for dimmer to power up...
 
     # override switch state
     print("sending switch command to crownstone {0}".format(intensity))
@@ -40,11 +40,11 @@ def test_bootloadsflashintooverride_loopbody(FW, intensity):
     # print("allow device to reset and startup")
     time.sleep(3)
 
-    # Test SwitchAggregator.overrideState
+    # Test SwitchAggregator._overrideState
     expected_override_state = min(max(0, intensity), 100)
 
-    response = expect(FW, "SwitchAggregator", 'overrideState', expected_override_state,
-                      "overrideState should've been {0} after reset".format(
+    response = expect(FW, "SwitchAggregator", '_overrideState', expected_override_state,
+                      "_overrideState should've been {0} after reset".format(
                           expected_override_state))
 
     if response is not None:
